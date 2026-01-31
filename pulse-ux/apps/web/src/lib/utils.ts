@@ -35,3 +35,56 @@ export function truncate(str: string, maxLength: number): string {
   if (str.length <= maxLength) return str;
   return `${str.slice(0, maxLength - 3)}...`;
 }
+
+/**
+ * Capitalize the first letter of a string.
+ */
+export function capitalize(str: string): string {
+  if (!str) return str;
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+/**
+ * Safely parse a URL and return the hostname, or fallback text.
+ */
+export function getHostname(url: string, fallback = "Unknown"): string {
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return fallback;
+  }
+}
+
+/**
+ * Calculate conversion rate from impressions and conversions.
+ */
+export function calculateConversionRate(
+  conversions: number,
+  impressions: number
+): number {
+  if (impressions === 0) return 0;
+  return (conversions / impressions) * 100;
+}
+
+/**
+ * Calculate lift percentage between control and variant.
+ */
+export function calculateLift(
+  variantRate: number,
+  controlRate: number
+): number {
+  if (controlRate === 0) return 0;
+  return ((variantRate - controlRate) / controlRate) * 100;
+}
+
+/**
+ * Format a conversion rate for display.
+ */
+export function formatConversionRate(
+  conversions: number,
+  impressions: number,
+  decimals = 1
+): string {
+  const rate = calculateConversionRate(conversions, impressions);
+  return `${rate.toFixed(decimals)}%`;
+}

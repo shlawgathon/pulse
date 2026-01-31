@@ -1,10 +1,37 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import Link from "next/link";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { api } from "@/lib/api-client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { StatusBadge } from "@/components/status-badge";
+import { PageLoading } from "@/components/loading-spinner";
+import { formatDate } from "@/lib/utils";
 import type { Site, Experiment } from "@/types";
+
+const COPY_FEEDBACK_DURATION = 2000;
+
+const githubSchema = z.object({
+  github_repo: z.string().optional(),
+  github_pat: z.string().optional(),
+});
+
+type GitHubFormData = z.infer<typeof githubSchema>;
 
 export default function SiteDetailPage() {
   const params = useParams();
@@ -14,27 +41,54 @@ export default function SiteDetailPage() {
 
   const [copied, setCopied] = useState(false);
   const [showGitHubForm, setShowGitHubForm] = useState(false);
-  const [githubRepo, setGithubRepo] = useState("");
-  const [githubPat, setGithubPat] = useState("");
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const { data: site, isLoading } = useQuery({
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Fetch site and experiments in parallel
+  const { data: site, isLoading: siteLoading } = useQuery({
     queryKey: ["site", siteId],
     queryFn: () => api.get<Site>(`/api/v1/sites/${siteId}`),
   });
 
-  const { data: experiments } = useQuery({
+  const { data: experiments, isLoading: experimentsLoading } = useQuery({
     queryKey: ["site-experiments", siteId],
-    queryFn: () => api.get<Experiment[]>(`/api/v1/experiments?site_id=${siteId}`),
-    enabled: !!site,
+    queryFn: () =>
+      api.get<Experiment[]>(`/api/v1/experiments?site_id=${siteId}`),
   });
 
+  const form = useForm<GitHubFormData>({
+    resolver: zodResolver(githubSchema),
+    defaultValues: {
+      github_repo: "",
+      github_pat: "",
+    },
+  });
+
+  // Update form when site data loads
+  useEffect(() => {
+    if (site?.github_repo) {
+      form.setValue("github_repo", site.github_repo);
+    }
+  }, [site, form]);
+
   const updateSite = useMutation({
-    mutationFn: (data: { github_repo?: string; github_pat?: string }) =>
-      api.patch<Site>(`/api/v1/sites/${siteId}`, data),
+    mutationFn: (data: GitHubFormData) =>
+      api.patch<Site>(`/api/v1/sites/${siteId}`, {
+        github_repo: data.github_repo || undefined,
+        github_pat: data.github_pat || undefined,
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["site", siteId] });
       setShowGitHubForm(false);
-      setGithubPat("");
+      form.reset();
     },
   });
 
@@ -45,93 +99,124 @@ export default function SiteDetailPage() {
     },
   });
 
-  const copyToClipboard = async (text: string) => {
+  const copyToClipboard = useCallback(async (text: string) => {
     await navigator.clipboard.writeText(text);
     setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    timeoutRef.current = setTimeout(
+      () => setCopied(false),
+      COPY_FEEDBACK_DURATION
+    );
+  }, []);
+
+  const handleDelete = useCallback(() => {
+    if (confirm("Are you sure you want to delete this site?")) {
+      deleteSite.mutate();
+    }
+  }, [deleteSite]);
+
+  const handleOpenGitHubForm = useCallback(() => {
+    if (site?.github_repo) {
+      form.setValue("github_repo", site.github_repo);
+    }
+    setShowGitHubForm(true);
+  }, [site, form]);
+
+  const handleCloseGitHubForm = useCallback(() => {
+    setShowGitHubForm(false);
+    form.reset();
+  }, [form]);
+
+  const onGitHubSubmit = useCallback(
+    (data: GitHubFormData) => {
+      updateSite.mutate(data);
+    },
+    [updateSite]
+  );
+
+  // Memoized computed values
+  const activeExperiments = useMemo(
+    () => experiments?.filter((e) => e.status === "active").length || 0,
+    [experiments]
+  );
+
+  const isLoading = siteLoading || experimentsLoading;
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-lime-400 border-t-transparent" />
-      </div>
-    );
+    return <PageLoading message="Loading site..." />;
   }
 
   if (!site) {
     return (
-      <div className="text-center py-12">
-        <p className="text-zinc-500">Site not found</p>
+      <div className="text-center py-12" role="status">
+        <p className="text-muted-foreground">Site not found</p>
       </div>
     );
   }
-
-  const activeExperiments =
-    experiments?.filter((e) => e.status === "active").length || 0;
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-zinc-900">{site.name}</h1>
-          <p className="mt-1 text-sm text-zinc-500">{site.domain}</p>
+          <h1 className="text-2xl font-semibold">{site.name}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">{site.domain}</p>
         </div>
-        <div className="flex gap-2">
-          <button
-            onClick={() => {
-              if (confirm("Are you sure you want to delete this site?")) {
-                deleteSite.mutate();
-              }
-            }}
-            className="rounded-md border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
-          >
-            Delete
-          </button>
-        </div>
+        <Button
+          variant="outline"
+          onClick={handleDelete}
+          disabled={deleteSite.isPending}
+          className="text-destructive border-destructive/30 hover:bg-destructive/10"
+        >
+          {deleteSite.isPending ? "Deleting..." : "Delete"}
+        </Button>
       </div>
 
       {/* Stats */}
       <div className="grid gap-4 md:grid-cols-3">
-        <div className="rounded-lg border border-zinc-200 bg-white p-4">
-          <p className="text-sm text-zinc-500">Status</p>
-          <p className="mt-1 text-sm font-medium text-zinc-900">
+        <div className="rounded-lg border bg-card p-4">
+          <p className="text-sm text-muted-foreground">Status</p>
+          <p className="mt-1 text-sm font-medium">
             {site.is_active ? (
               <span className="inline-flex items-center text-green-600">
-                <span className="mr-1.5 h-2 w-2 rounded-full bg-green-500" />
+                <span
+                  className="mr-1.5 h-2 w-2 rounded-full bg-green-500"
+                  aria-hidden="true"
+                />
                 Active
               </span>
             ) : (
-              <span className="inline-flex items-center text-zinc-500">
-                <span className="mr-1.5 h-2 w-2 rounded-full bg-zinc-400" />
+              <span className="inline-flex items-center text-muted-foreground">
+                <span
+                  className="mr-1.5 h-2 w-2 rounded-full bg-muted-foreground"
+                  aria-hidden="true"
+                />
                 Inactive
               </span>
             )}
           </p>
         </div>
-        <div className="rounded-lg border border-zinc-200 bg-white p-4">
-          <p className="text-sm text-zinc-500">Active Experiments</p>
-          <p className="mt-1 text-sm font-medium text-zinc-900">
-            {activeExperiments}
-          </p>
+        <div className="rounded-lg border bg-card p-4">
+          <p className="text-sm text-muted-foreground">Active Experiments</p>
+          <p className="mt-1 text-sm font-medium">{activeExperiments}</p>
         </div>
-        <div className="rounded-lg border border-zinc-200 bg-white p-4">
-          <p className="text-sm text-zinc-500">Created</p>
-          <p className="mt-1 text-sm font-medium text-zinc-900">
-            {new Date(site.created_at).toLocaleDateString()}
+        <div className="rounded-lg border bg-card p-4">
+          <p className="text-sm text-muted-foreground">Created</p>
+          <p className="mt-1 text-sm font-medium">
+            {formatDate(site.created_at)}
           </p>
         </div>
       </div>
 
       {/* Script Installation */}
-      <div className="rounded-lg border border-zinc-200 bg-white p-6">
-        <h2 className="text-lg font-medium text-zinc-900 mb-4">
-          Install Script
-        </h2>
-        <p className="text-sm text-zinc-500 mb-4">
+      <div className="rounded-lg border bg-card p-6">
+        <h2 className="text-lg font-medium mb-4">Install Script</h2>
+        <p className="text-sm text-muted-foreground mb-4">
           Add this script tag to your website&apos;s{" "}
-          <code className="rounded bg-zinc-100 px-1 py-0.5 font-mono text-xs">
+          <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">
             &lt;head&gt;
           </code>{" "}
           section to enable A/B testing.
@@ -141,16 +226,19 @@ export default function SiteDetailPage() {
           <pre className="rounded-lg bg-zinc-900 p-4 text-sm text-zinc-100 overflow-x-auto">
             <code>{site.script_tag}</code>
           </pre>
-          <button
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={() => copyToClipboard(site.script_tag)}
-            className="absolute right-2 top-2 rounded-md bg-zinc-700 px-3 py-1.5 text-xs font-medium text-zinc-200 hover:bg-zinc-600"
+            className="absolute right-2 top-2"
+            aria-label={copied ? "Copied to clipboard" : "Copy script tag"}
           >
             {copied ? "Copied!" : "Copy"}
-          </button>
+          </Button>
         </div>
 
-        <div className="mt-4 rounded-lg bg-lime-50 border border-lime-200 p-4">
-          <p className="text-sm text-lime-800">
+        <div className="mt-4 rounded-lg bg-primary/5 border border-primary/20 p-4">
+          <p className="text-sm text-primary">
             <strong>Public Key:</strong>{" "}
             <code className="font-mono">{site.public_key}</code>
           </p>
@@ -158,36 +246,29 @@ export default function SiteDetailPage() {
       </div>
 
       {/* GitHub Integration */}
-      <div className="rounded-lg border border-zinc-200 bg-white p-6">
+      <div className="rounded-lg border bg-card p-6">
         <div className="flex items-start justify-between mb-4">
           <div>
-            <h2 className="text-lg font-medium text-zinc-900">
-              GitHub Integration
-            </h2>
-            <p className="text-sm text-zinc-500">
+            <h2 className="text-lg font-medium">GitHub Integration</h2>
+            <p className="text-sm text-muted-foreground">
               Connect your repository to generate Pull Requests for winning
               variants.
             </p>
           </div>
           {!showGitHubForm && (
-            <button
-              onClick={() => {
-                setGithubRepo(site.github_repo || "");
-                setShowGitHubForm(true);
-              }}
-              className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
-            >
+            <Button variant="outline" onClick={handleOpenGitHubForm}>
               {site.github_repo ? "Update" : "Connect"}
-            </button>
+            </Button>
           )}
         </div>
 
         {site.github_repo && !showGitHubForm && (
-          <div className="flex items-center gap-2 rounded-lg bg-zinc-50 p-4">
+          <div className="flex items-center gap-2 rounded-lg bg-muted p-4">
             <svg
-              className="h-5 w-5 text-zinc-700"
+              className="h-5 w-5"
               fill="currentColor"
               viewBox="0 0 24 24"
+              aria-hidden="true"
             >
               <path
                 fillRule="evenodd"
@@ -195,9 +276,7 @@ export default function SiteDetailPage() {
                 clipRule="evenodd"
               />
             </svg>
-            <span className="text-sm font-medium text-zinc-700">
-              {site.github_repo}
-            </span>
+            <span className="text-sm font-medium">{site.github_repo}</span>
             <span className="ml-auto inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
               Connected
             </span>
@@ -205,81 +284,77 @@ export default function SiteDetailPage() {
         )}
 
         {showGitHubForm && (
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              updateSite.mutate({
-                github_repo: githubRepo || undefined,
-                github_pat: githubPat || undefined,
-              });
-            }}
-            className="space-y-4"
-          >
-            <div>
-              <label
-                htmlFor="github_repo"
-                className="block text-sm font-medium text-zinc-700"
-              >
-                Repository
-              </label>
-              <input
-                type="text"
-                id="github_repo"
-                value={githubRepo}
-                onChange={(e) => setGithubRepo(e.target.value)}
-                placeholder="owner/repository"
-                className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm placeholder:text-zinc-400 focus:border-lime-500 focus:outline-none focus:ring-1 focus:ring-lime-500"
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit(onGitHubSubmit)}
+              className="space-y-4"
+            >
+              <FormField
+                control={form.control}
+                name="github_repo"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Repository</FormLabel>
+                    <FormControl>
+                      <Input placeholder="owner/repository" {...field} />
+                    </FormControl>
+                    <FormDescription>
+                      Format: owner/repository (e.g., acme/website)
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-              <p className="mt-1 text-xs text-zinc-500">
-                Format: owner/repository (e.g., acme/website)
-              </p>
-            </div>
 
-            <div>
-              <label
-                htmlFor="github_pat"
-                className="block text-sm font-medium text-zinc-700"
-              >
-                Personal Access Token
-              </label>
-              <input
-                type="password"
-                id="github_pat"
-                value={githubPat}
-                onChange={(e) => setGithubPat(e.target.value)}
-                placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
-                className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm placeholder:text-zinc-400 focus:border-lime-500 focus:outline-none focus:ring-1 focus:ring-lime-500"
+              <FormField
+                control={form.control}
+                name="github_pat"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Personal Access Token</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="password"
+                        placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Needs repo scope. Leave blank to keep existing token.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-              <p className="mt-1 text-xs text-zinc-500">
-                Needs repo scope. Leave blank to keep existing token.
-              </p>
-            </div>
 
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setShowGitHubForm(false)}
-                className="flex-1 rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={updateSite.isPending}
-                className="flex-1 rounded-md bg-lime-400 px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-lime-500 disabled:opacity-50"
-              >
-                {updateSite.isPending ? "Saving..." : "Save"}
-              </button>
-            </div>
-          </form>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleCloseGitHubForm}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={updateSite.isPending}
+                  className="flex-1"
+                >
+                  {updateSite.isPending ? "Saving..." : "Save"}
+                </Button>
+              </div>
+            </form>
+          </Form>
         )}
 
         {!site.github_repo && !showGitHubForm && (
-          <div className="rounded-lg border border-dashed border-zinc-300 p-6 text-center">
+          <div className="rounded-lg border border-dashed p-6 text-center">
             <svg
-              className="mx-auto h-8 w-8 text-zinc-400"
+              className="mx-auto h-8 w-8 text-muted-foreground"
               fill="currentColor"
               viewBox="0 0 24 24"
+              aria-hidden="true"
             >
               <path
                 fillRule="evenodd"
@@ -287,10 +362,10 @@ export default function SiteDetailPage() {
                 clipRule="evenodd"
               />
             </svg>
-            <p className="mt-2 text-sm text-zinc-500">
+            <p className="mt-2 text-sm text-muted-foreground">
               No GitHub repository connected
             </p>
-            <p className="text-xs text-zinc-400">
+            <p className="text-xs text-muted-foreground/70">
               Connect to automatically generate PRs for winning variants
             </p>
           </div>
@@ -298,48 +373,36 @@ export default function SiteDetailPage() {
       </div>
 
       {/* Recent Experiments */}
-      <div className="rounded-lg border border-zinc-200 bg-white p-6">
-        <h2 className="text-lg font-medium text-zinc-900 mb-4">
-          Recent Experiments
-        </h2>
+      <div className="rounded-lg border bg-card p-6">
+        <h2 className="text-lg font-medium mb-4">Recent Experiments</h2>
 
         {experiments && experiments.length > 0 ? (
           <div className="space-y-3">
             {experiments.slice(0, 5).map((experiment) => (
-              <a
+              <Link
                 key={experiment.id}
                 href={`/experiments/${experiment.id}`}
-                className="flex items-center justify-between rounded-lg border border-zinc-100 p-4 hover:border-zinc-200 hover:bg-zinc-50"
+                className="flex items-center justify-between rounded-lg border p-4 hover:bg-muted/50 transition-colors"
               >
                 <div>
-                  <p className="font-medium text-zinc-900">{experiment.name}</p>
-                  <p className="text-sm text-zinc-500 truncate max-w-md">
+                  <p className="font-medium">{experiment.name}</p>
+                  <p className="text-sm text-muted-foreground truncate max-w-md">
                     {experiment.target_url}
                   </p>
                 </div>
-                <span
-                  className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                    experiment.status === "active"
-                      ? "bg-green-100 text-green-700"
-                      : experiment.status === "completed"
-                        ? "bg-blue-100 text-blue-700"
-                        : "bg-zinc-100 text-zinc-700"
-                  }`}
-                >
-                  {experiment.status}
-                </span>
-              </a>
+                <StatusBadge status={experiment.status} />
+              </Link>
             ))}
           </div>
         ) : (
           <div className="text-center py-8">
-            <p className="text-zinc-500">No experiments yet</p>
-            <a
+            <p className="text-muted-foreground">No experiments yet</p>
+            <Link
               href="/experiments/new"
-              className="mt-2 inline-block text-sm text-lime-600 hover:text-lime-700"
+              className="mt-2 inline-block text-sm text-primary hover:underline"
             >
               Create your first experiment
-            </a>
+            </Link>
           </div>
         )}
       </div>

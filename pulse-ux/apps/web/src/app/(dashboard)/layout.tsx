@@ -3,8 +3,9 @@
 /**
  * Dashboard layout with sidebar navigation.
  * Light theme, Detail.dev-inspired clean aesthetic.
+ * Auth is handled by middleware - this component focuses on UI only.
  */
-import { useEffect, useState } from "react";
+import { useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -16,7 +17,7 @@ import {
   Mail,
   LogOut,
 } from "lucide-react";
-import { getTokens, clearTokens } from "@/lib/api-client";
+import { clearTokens } from "@/lib/api-client";
 
 const navItems = [
   {
@@ -43,30 +44,11 @@ export default function DashboardLayout({
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  const [isLoading, setIsLoading] = useState(true);
 
-  // Check authentication on mount
-  useEffect(() => {
-    const { accessToken } = getTokens();
-    if (!accessToken) {
-      router.push("/login");
-    } else {
-      setIsLoading(false);
-    }
-  }, [router]);
-
-  const handleLogout = () => {
+  const handleLogout = useCallback(() => {
     clearTokens();
     router.push("/login");
-  };
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-pulse">Loading...</div>
-      </div>
-    );
-  }
+  }, [router]);
 
   return (
     <div className="min-h-screen flex bg-background">

@@ -3,17 +3,32 @@
 /**
  * Experiments listing page with Detail.dev-inspired loading states.
  */
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { Plus, ExternalLink } from "lucide-react";
 import { api } from "@/lib/api-client";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { StatusBadge } from "@/components/status-badge";
+import { formatDate, getHostname } from "@/lib/utils";
 import type { Experiment, Site } from "@/types";
 
 // Loading skeleton component
 function LoadingSkeleton() {
   return (
-    <div className="bg-card rounded-lg border p-6">
+    <div
+      className="bg-card rounded-lg border p-6"
+      role="status"
+      aria-live="polite"
+      aria-label="Loading experiments"
+    >
       <div className="flex flex-col items-center justify-center py-12">
         <div className="space-y-3 w-full max-w-sm">
           <div className="h-4 bg-muted rounded animate-pulse w-full" />
@@ -38,28 +53,17 @@ function LoadingSkeleton() {
   );
 }
 
-// Status badge component
-function StatusBadge({ status }: { status: string }) {
-  const colors: Record<string, string> = {
-    draft: "bg-gray-100 text-gray-700",
-    pending: "bg-yellow-100 text-yellow-700",
-    active: "bg-green-100 text-green-700",
-    paused: "bg-orange-100 text-orange-700",
-    completed: "bg-blue-100 text-blue-700",
-    archived: "bg-gray-100 text-gray-500",
-  };
-
-  return (
-    <span
-      className={`px-2 py-1 rounded-full text-xs font-medium ${colors[status] || colors.draft}`}
-    >
-      {status.charAt(0).toUpperCase() + status.slice(1)}
-    </span>
-  );
-}
-
 // Experiment card component
 function ExperimentCard({ experiment }: { experiment: Experiment }) {
+  const hostname = useMemo(
+    () => getHostname(experiment.target_url),
+    [experiment.target_url]
+  );
+  const createdDate = useMemo(
+    () => formatDate(experiment.created_at),
+    [experiment.created_at]
+  );
+
   return (
     <Link
       href={`/experiments/${experiment.id}`}
@@ -78,12 +82,10 @@ function ExperimentCard({ experiment }: { experiment: Experiment }) {
 
       <div className="flex items-center gap-4 text-xs text-muted-foreground">
         <span className="flex items-center gap-1">
-          <ExternalLink className="h-3 w-3" />
-          {new URL(experiment.target_url).hostname}
+          <ExternalLink className="h-3 w-3" aria-hidden="true" />
+          {hostname}
         </span>
-        <span>
-          Created {new Date(experiment.created_at).toLocaleDateString()}
-        </span>
+        <span>Created {createdDate}</span>
       </div>
     </Link>
   );
@@ -119,7 +121,7 @@ function InfoCards() {
 }
 
 export default function ExperimentsPage() {
-  const [selectedSiteId, setSelectedSiteId] = useState<string>("");
+  const [selectedSiteId, setSelectedSiteId] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
   // Fetch sites
@@ -133,7 +135,8 @@ export default function ExperimentsPage() {
     queryKey: ["experiments", selectedSiteId, statusFilter],
     queryFn: () => {
       const params = new URLSearchParams();
-      if (selectedSiteId) params.append("site_id", selectedSiteId);
+      if (selectedSiteId && selectedSiteId !== "all")
+        params.append("site_id", selectedSiteId);
       if (statusFilter !== "all") params.append("status", statusFilter);
       const query = params.toString();
       return api.get<Experiment[]>(
@@ -150,41 +153,42 @@ export default function ExperimentsPage() {
 
         <div className="flex items-center gap-4">
           {/* Site filter */}
-          <select
-            value={selectedSiteId}
-            onChange={(e) => setSelectedSiteId(e.target.value)}
-            className="px-3 py-2 bg-background border rounded-md text-sm"
-          >
-            <option value="">All sites</option>
-            {sites?.map((site) => (
-              <option key={site.id} value={site.id}>
-                {site.name}
-              </option>
-            ))}
-          </select>
+          <Select value={selectedSiteId} onValueChange={setSelectedSiteId}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="All sites" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All sites</SelectItem>
+              {sites?.map((site) => (
+                <SelectItem key={site.id} value={site.id}>
+                  {site.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
           {/* Status filter */}
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 bg-background border rounded-md text-sm"
-          >
-            <option value="all">All statuses</option>
-            <option value="draft">Draft</option>
-            <option value="pending">Pending</option>
-            <option value="active">Active</option>
-            <option value="paused">Paused</option>
-            <option value="completed">Completed</option>
-          </select>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-[150px]">
+              <SelectValue placeholder="All statuses" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All statuses</SelectItem>
+              <SelectItem value="draft">Draft</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="paused">Paused</SelectItem>
+              <SelectItem value="completed">Completed</SelectItem>
+            </SelectContent>
+          </Select>
 
           {/* Create button */}
-          <Link
-            href="/experiments/new"
-            className="cta-button inline-flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90 transition-colors"
-          >
-            <Plus className="h-4 w-4" />
-            NEW EXPERIMENT
-          </Link>
+          <Button asChild className="cta-button">
+            <Link href="/experiments/new">
+              <Plus className="h-4 w-4" />
+              NEW EXPERIMENT
+            </Link>
+          </Button>
         </div>
       </div>
 
@@ -206,13 +210,12 @@ export default function ExperimentsPage() {
           <p className="text-muted-foreground mb-6">
             Create your first experiment to start optimizing your UX.
           </p>
-          <Link
-            href="/experiments/new"
-            className="cta-button inline-flex items-center gap-2 bg-primary text-primary-foreground px-6 py-3 rounded-md hover:bg-primary/90 transition-colors"
-          >
-            <Plus className="h-4 w-4" />
-            CREATE EXPERIMENT
-          </Link>
+          <Button asChild className="cta-button">
+            <Link href="/experiments/new">
+              <Plus className="h-4 w-4" />
+              CREATE EXPERIMENT
+            </Link>
+          </Button>
         </div>
       )}
     </div>

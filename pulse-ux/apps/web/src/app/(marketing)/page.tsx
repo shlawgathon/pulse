@@ -53,7 +53,7 @@ export default function LandingPage() {
             <div className="flex flex-wrap gap-4">
               <Link
                 href="/register"
-                className="cta-button inline-flex items-center gap-2 bg-lime-400 text-black px-8 py-3 rounded-md hover:bg-lime-300 transition-colors"
+                className="cta-button inline-flex items-center gap-2 bg-primary text-primary-foreground px-8 py-3 rounded-md hover:bg-primary/90 transition-colors"
               >
                 TRY FOR FREE
                 <ArrowRight className="h-4 w-4" />
@@ -162,7 +162,7 @@ export default function LandingPage() {
           </p>
           <Link
             href="/register"
-            className="cta-button inline-flex items-center gap-2 bg-lime-400 text-black px-8 py-4 rounded-md hover:bg-lime-300 transition-colors text-lg"
+            className="cta-button inline-flex items-center gap-2 bg-primary text-primary-foreground px-8 py-4 rounded-md hover:bg-primary/90 transition-colors text-lg"
           >
             GET STARTED FOR FREE
             <ArrowRight className="h-5 w-5" />
