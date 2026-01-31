@@ -25,7 +25,7 @@ class OpenRouterClient:
     """
 
     BASE_URL = "https://openrouter.ai/api/v1"
-    MODEL = "moonshotai/kimi-k2.5"  # Using Moonshot Kimi K2.5
+    MODEL = "moonshotai/kimi-k2.5"  # Multimodal model with vision support
 
     def __init__(self, api_key: str | None = None):
         """
@@ -87,11 +87,12 @@ class OpenRouterClient:
 
     async def chat_completion_structured(
         self,
-        messages: list[dict[str, str]],
+        messages: list[dict],
         response_model: type[T],
         *,
         temperature: float = 0.3,
         max_tokens: int = 8192,
+        image_url: str | None = None,
     ) -> T:
         """
         Send a chat completion request with structured output enforcement.
@@ -101,6 +102,7 @@ class OpenRouterClient:
             response_model: Pydantic model class for response validation
             temperature: Sampling temperature (lower for more deterministic)
             max_tokens: Maximum tokens in response
+            image_url: Optional URL of an image to include for vision models
 
         Returns:
             Instance of response_model populated with LLM response
@@ -118,23 +120,44 @@ class OpenRouterClient:
             "Respond ONLY with the JSON object, no additional text or markdown."
         )
 
+        # Build enhanced messages with optional image support
         enhanced_messages = [
             {"role": "system", "content": system_instruction},
-            *messages,
         ]
+
+        # Process messages, adding image to user messages if provided
+        for msg in messages:
+            if image_url and msg.get("role") == "user":
+                # Use vision format: content as array with text and image
+                enhanced_messages.append({
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": msg["content"]},
+                        {"type": "image_url", "image_url": {"url": image_url}},
+                    ],
+                })
+            else:
+                enhanced_messages.append(msg)
 
         payload = {
             "model": self.MODEL,
             "messages": enhanced_messages,
             "temperature": temperature,
             "max_tokens": max_tokens,
+            # Note: reasoning disabled as some providers don't support it
         }
 
         response = await client.post("/chat/completions", json=payload)
         response.raise_for_status()
 
         data = response.json()
-        content = data["choices"][0]["message"]["content"]
+        content = data["choices"][0]["message"].get("content")
+        
+        # Debug: print raw response
+        print(f"📥 LLM raw content type: {type(content)}, length: {len(content) if content else 0}")
+        if not content:
+            print(f"⚠️ LLM response has no content! Full message: {data['choices'][0]['message']}")
+            raise ValueError(f"LLM returned empty content. Full response: {data}")
 
         # Clean up any markdown code blocks
         content = content.strip()
@@ -145,10 +168,16 @@ class OpenRouterClient:
         if content.endswith("```"):
             content = content[:-3]
         content = content.strip()
+        
+        print(f"📋 Cleaned content (first 500 chars): {content[:500]}")
 
         try:
-            return response_model.model_validate_json(content)
+            result = response_model.model_validate_json(content)
+            print(f"✅ Parsed response successfully")
+            return result
         except Exception as e:
+            print(f"❌ Schema validation failed: {e}")
+            print(f"❌ Content was: {content[:1000]}")
             raise ValueError(f"LLM response failed schema validation: {e}\nResponse: {content}")
 
     async def close(self) -> None:

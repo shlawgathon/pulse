@@ -81,7 +81,8 @@ class ExperimentService:
         await control.insert()
 
         # Trigger async variant generation in background
-        asyncio.create_task(
+        # Store task reference to prevent garbage collection
+        task = asyncio.create_task(
             self._generate_variants_async(
                 experiment_id=str(experiment.id),
                 target_url=target_url,
@@ -89,6 +90,12 @@ class ExperimentService:
                 num_variants=num_variants,
             )
         )
+        # Add callback to log any unhandled exceptions
+        def log_exception(t):
+            if t.exception():
+                print(f"❌ Background task failed: {t.exception()}")
+                logger.error(f"Background task failed: {t.exception()}")
+        task.add_done_callback(log_exception)
 
         return experiment
 
@@ -104,12 +111,15 @@ class ExperimentService:
 
         This runs asynchronously after experiment creation.
         """
+        print(f"🚀 Starting variant generation for experiment {experiment_id}")
         logger.info(f"Starting variant generation for experiment {experiment_id}")
 
         try:
             # 1. Scrape the target URL
+            print(f"📸 Scraping URL: {target_url}")
             logger.info(f"Scraping URL: {target_url}")
             scrape_result = await scrape_url(target_url, include_screenshot=True)
+            print(f"✅ Scrape complete. HTML: {len(scrape_result.get('html', ''))} chars, CSS: {len(scrape_result.get('css', ''))} chars, Screenshot: {bool(scrape_result.get('screenshot'))}")
 
             # Update experiment with HTML snapshot and screenshot
             experiment = await Experiment.get(experiment_id)
@@ -118,15 +128,24 @@ class ExperimentService:
                 experiment.base_screenshot_url = scrape_result.get("screenshot")
                 await experiment.save()
 
-            # 2. Generate variants via LLM
+            # 2. Generate variants via LLM (with screenshot for vision and CSS for styling)
             logger.info(f"Generating {num_variants} variants via LLM")
             await generate_variants_for_experiment(
                 experiment_id=experiment_id,
                 html=scrape_result.get("html", ""),
+                css=scrape_result.get("css", ""),
                 target_url=target_url,
                 optimization_goal=optimization_goal,
                 num_variants=num_variants,
+                screenshot_url=scrape_result.get("screenshot"),
             )
+
+            # Update experiment status to PENDING (ready to activate)
+            experiment = await Experiment.get(experiment_id)
+            if experiment:
+                experiment.status = ExperimentStatus.PENDING
+                experiment.updated_at = datetime.utcnow()
+                await experiment.save()
 
             logger.info(f"Variant generation complete for experiment {experiment_id}")
 
@@ -137,7 +156,8 @@ class ExperimentService:
             if experiment:
                 error_msg = str(e)[:500]  # Truncate long error messages
                 original_desc = experiment.description or ""
-                experiment.description = f"[Error: {error_msg}] {original_desc}".strip()
+                experiment.description = f"[Generation Failed: {error_msg}] {original_desc}".strip()
+                # Keep as DRAFT but with error info so user can retry
                 experiment.updated_at = datetime.utcnow()
                 await experiment.save()
 
