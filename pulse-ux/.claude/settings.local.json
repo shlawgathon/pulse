@@ -10,7 +10,18 @@
       "Bash(bun run lint:*)",
       "Bash(npx @next/codemod@latest next-lint-to-eslint-cli .)",
       "Bash(npx @next/codemod@latest next-lint-to-eslint-cli:*)",
-      "Bash(bun run build)"
+      "Bash(bun run build)",
+      "Bash(bun run dev:*)",
+      "Bash(bun --version:*)",
+      "Bash(uv run:*)",
+      "Bash(timeout:*)",
+      "Bash(bun add:*)",
+      "Bash(taskkill:*)",
+      "Bash(del \"C:\\\\Users\\\\aritr\\\\Desktop\\\\GitHub Projects\\\\pulse\\\\pulse-ux\\\\apps\\\\web\\\\.next\\\\dev\\\\lock\")",
+      "Bash(ping:*)",
+      "Bash(netstat:*)",
+      "Bash(TASKKILL //F //PID 17292)",
+      "Bash(TASKKILL //F //PID:*)"
     ]
   }
 }

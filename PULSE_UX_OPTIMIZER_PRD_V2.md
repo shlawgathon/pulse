@@ -32,7 +32,7 @@
 
 **Pulse UX Optimizer** is an AI-powered platform that automates A/B testing for UX improvements. The system enables developers and product teams to:
 
-1. **Generate UX variants** using Claude Opus 4.5 via OpenRouter, informed by live DOM scraping via Firecrawl
+1. **Generate UX variants** using LLM via OpenRouter (currently Moonshot Kimi K2.5), informed by live DOM scraping via Firecrawl
 2. **Deploy runtime experiments** without code deployments using an injected "actuator" script
 3. **Compare variants side-by-side** with visual diff rendering and AI-generated insights
 4. **Choose winning variants** through an intuitive dashboard interface
@@ -58,7 +58,7 @@ Traditional A/B testing requires significant engineering effort to implement, de
 Pulse UX Optimizer provides an end-to-end workflow that:
 
 1. Scrapes the current live DOM using Firecrawl to understand the existing UI structure
-2. Leverages Claude Opus 4.5 (via OpenRouter) to generate semantically valid UX patches
+2. Leverages LLM via OpenRouter (currently Moonshot Kimi K2.5) to generate semantically valid UX patches
 3. Deploys patches at runtime via an injected script without requiring code deployments
 4. Captures screenshots and session data for side-by-side comparison
 5. Enables human decision-making through visual comparison UI
@@ -117,7 +117,7 @@ Lightweight script injected into customer sites:
 3. Tracks interactions and sends events
 4. Handles SPA navigation and hydration
 
-### 3.5 AI Pipeline (Claude Opus 4.5 via OpenRouter)
+### 3.5 AI Pipeline (LLM via OpenRouter)
 
 LLM-powered services for:
 
@@ -202,7 +202,7 @@ flowchart TB
 
     subgraph "External Services"
         FC[Firecrawl API]
-        OR[OpenRouter API<br>Claude Opus 4.5]
+        OR[OpenRouter API<br>Kimi K2.5]
         GH[GitHub API<br>Future: OAuth]
         RS[Resend API]
     end
@@ -342,7 +342,7 @@ sequenceDiagram
 | Service | Purpose | Documentation |
 |---------|---------|---------------|
 | Firecrawl | DOM scraping, screenshots | https://docs.firecrawl.dev |
-| OpenRouter | LLM access (Claude Opus 4.5) | https://openrouter.ai/docs |
+| OpenRouter | LLM access (currently Kimi K2.5) | https://openrouter.ai/docs |
 | Resend | Transactional email | https://resend.com/docs |
 | GitHub | Repository integration, PR creation | https://docs.github.com |
 
@@ -890,7 +890,7 @@ POST /api/v1/experiments:
   summary: Create a new experiment
   description: |
     Creates an experiment, triggers DOM scraping via Firecrawl,
-    and initiates variant generation via Claude Opus 4.5.
+    and initiates variant generation via LLM (Kimi K2.5).
   security:
     - bearerAuth: []
   requestBody:
@@ -1517,7 +1517,7 @@ function InfoCards() {
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground">
-            Pulse scrapes your site's DOM and uses Claude Opus 4.5 to
+            Pulse scrapes your site's DOM and uses AI to
             generate UX improvements, looking for conversion opportunities
             and selecting the most impactful changes.
           </p>
@@ -2366,11 +2366,11 @@ class FirecrawlClient:
 firecrawl_client = FirecrawlClient()
 ```
 
-### 9.5 OpenRouter Integration (Claude Opus 4.5)
+### 9.5 OpenRouter Integration (LLM)
 
 ```python
 """
-OpenRouter API integration for Claude Opus 4.5 LLM calls.
+OpenRouter API integration for LLM calls.
 
 This module provides structured output generation for UX patches
 and code transformations using OpenRouter's OpenAI-compatible API.
@@ -2388,14 +2388,14 @@ T = TypeVar("T", bound=BaseModel)
 
 class OpenRouterClient:
     """
-    Async client for OpenRouter API using Claude Opus 4.5.
-    
+    Async client for OpenRouter API using Moonshot Kimi K2.5.
+
     Provides methods for chat completions with structured output
     enforcement using JSON schemas.
     """
-    
+
     BASE_URL = "https://openrouter.ai/api/v1"
-    MODEL = "anthropic/claude-opus-4.5"
+    MODEL = "moonshotai/kimi-k2.5"  # Using Moonshot Kimi K2.5
     
     def __init__(self, api_key: str | None = None):
         """
@@ -2539,7 +2539,7 @@ The actuator script implementation remains the same as in the previous version. 
 
 ## 11. AI/LLM Integration
 
-All LLM operations use **Claude Opus 4.5** via OpenRouter at `https://openrouter.ai/api/v1` with model identifier `anthropic/claude-opus-4.5`.
+All LLM operations use **Moonshot Kimi K2.5** via OpenRouter at `https://openrouter.ai/api/v1` with model identifier `moonshotai/kimi-k2.5`. The model can be changed by modifying the `MODEL` constant in `src/integrations/openrouter.py`.
 
 Key integration points:
 1. **Variant Generation:** Structured output with DOM patch schema
@@ -2553,7 +2553,7 @@ Key integration points:
 | Service | Purpose | Auth Method |
 |---------|---------|-------------|
 | Firecrawl | DOM scraping, screenshots | API Key (Bearer token) |
-| OpenRouter | Claude Opus 4.5 access | API Key (Bearer token) |
+| OpenRouter | LLM access (Kimi K2.5) | API Key (Bearer token) |
 | Resend | Email notifications | API Key |
 | GitHub | PR creation | Personal Access Token (initial), OAuth (future) |
 
