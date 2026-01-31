@@ -69,6 +69,14 @@ export default function ExperimentDetailPage() {
     }
   });
 
+  const regenerateVariants = useMutation({
+    mutationFn: () => api.post<Experiment>(`/api/v1/experiments/${experimentId}/regenerate`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["experiment", experimentId] });
+      queryClient.invalidateQueries({ queryKey: ["experiment-variants", experimentId] });
+    }
+  });
+
   // Memoize derived data
   const control = useMemo(() => variants?.find((v) => v.is_control), [variants]);
 
@@ -109,6 +117,10 @@ export default function ExperimentDetailPage() {
     [generatePR]
   );
 
+  const handleRegenerate = useCallback(() => {
+    regenerateVariants.mutate();
+  }, [regenerateVariants]);
+
   const isLoading = experimentLoading || variantsLoading;
 
   if (isLoading) {
@@ -146,7 +158,12 @@ export default function ExperimentDetailPage() {
               {pauseExperiment.isPending ? "Pausing..." : "Pause"}
             </Button>
           )}
-          {(experiment.status === "active" || experiment.status === "paused") && (
+          {experiment.status !== "completed" && experiment.status !== "draft" && treatmentVariants.length > 0 && (
+            <Button variant="outline" onClick={handleRegenerate} disabled={regenerateVariants.isPending}>
+              {regenerateVariants.isPending ? "Regenerating..." : "Regenerate Variants"}
+            </Button>
+          )}
+          {(experiment.status === "pending" || experiment.status === "active" || experiment.status === "paused") && (
             <Button variant="secondary" asChild>
               <Link href={`/experiments/${experimentId}/compare`}>Compare Variants</Link>
             </Button>

@@ -63,6 +63,7 @@ class VariantResponse(BaseModel):
     is_control: bool
     patches: list[dict]
     screenshot_url: str | None = None
+    rendered_html: str | None = None
     impressions: int
     conversions: int
 
@@ -249,6 +250,7 @@ async def get_experiment_variants(
             is_control=v.is_control,
             patches=[p.model_dump() for p in v.patches],
             screenshot_url=v.screenshot_url,
+            rendered_html=v.rendered_html,
             impressions=v.impressions,
             conversions=v.conversions,
         )
@@ -329,6 +331,54 @@ async def pause_experiment(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Experiment not found or cannot be paused",
+        )
+
+    return ExperimentResponse(
+        id=str(experiment.id),
+        site_id=experiment.site_id,
+        name=experiment.name,
+        description=experiment.description,
+        target_url=experiment.target_url,
+        url_pattern=experiment.url_pattern,
+        status=experiment.status.value,
+        traffic_allocation=experiment.traffic_allocation,
+        created_at=experiment.created_at.isoformat(),
+        started_at=experiment.started_at.isoformat() if experiment.started_at else None,
+        ended_at=experiment.ended_at.isoformat() if experiment.ended_at else None,
+        winner_variant_id=experiment.winner_variant_id,
+        base_screenshot_url=experiment.base_screenshot_url,
+    )
+
+
+@router.post("/{experiment_id}/regenerate", response_model=ExperimentResponse)
+async def regenerate_variants(
+    experiment_id: str,
+    current_user: User = Depends(get_current_user),
+) -> ExperimentResponse:
+    """
+    Regenerate variants for an experiment (if both current variants are bad).
+
+    This deletes existing non-control variants and generates new ones.
+
+    Args:
+        experiment_id: The experiment's ID.
+        current_user: The authenticated user.
+
+    Returns:
+        Updated experiment.
+
+    Raises:
+        HTTPException: If experiment not found or cannot regenerate.
+    """
+    experiment = await experiment_service.regenerate_variants(
+        experiment_id=experiment_id,
+        user_id=str(current_user.id),
+    )
+
+    if experiment is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Experiment not found or cannot regenerate variants",
         )
 
     return ExperimentResponse(
@@ -450,6 +500,7 @@ async def get_comparison(
                 is_control=v.is_control,
                 patches=[p.model_dump() for p in v.patches],
                 screenshot_url=v.screenshot_url,
+                rendered_html=v.rendered_html,
                 impressions=v.impressions,
                 conversions=v.conversions,
             )

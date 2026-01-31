@@ -60,6 +60,10 @@ async def generate_variants_for_experiment(
 
         variant_ids = []
 
+        # Get the experiment to access base_html_snapshot
+        experiment = await Experiment.get(experiment_id)
+        base_html = experiment.base_html_snapshot if experiment else html
+
         # Create variant documents
         for gen_variant in response.variants:
             # Convert patches
@@ -79,12 +83,15 @@ async def generate_variants_for_experiment(
                     property_name=patch.property_name,
                 ))
 
+            # Generate rendered HTML with patches applied (we store the base + patches, frontend renders)
+            # For now, just store the patches - the frontend will apply them dynamically
             variant = Variant(
                 experiment_id=experiment_id,
                 name=gen_variant.name,
                 description=gen_variant.description,
                 is_control=False,
                 patches=patches,
+                rendered_html=base_html,  # Store base HTML; patches applied client-side
             )
             await variant.insert()
             variant_ids.append(str(variant.id))

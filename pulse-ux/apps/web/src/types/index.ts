@@ -86,6 +86,7 @@ export interface Variant {
   is_control: boolean;
   patches: DOMPatch[];
   screenshot_url?: string | null;
+  rendered_html?: string | null;
   impressions: number;
   conversions: number;
 }

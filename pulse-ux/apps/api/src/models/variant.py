@@ -66,6 +66,7 @@ class Variant(Document):
     is_control: bool = Field(default=False)
     patches: list[DOMPatch] = Field(default_factory=list)
     screenshot_url: Optional[str] = Field(default=None)
+    rendered_html: Optional[str] = Field(default=None)  # Cached rendered HTML with patches applied
     impressions: int = Field(default=0)
     conversions: int = Field(default=0)
     created_at: datetime = Field(default_factory=datetime.utcnow)

@@ -279,6 +279,61 @@ class ExperimentService:
         await experiment.save()
         return experiment
 
+    async def regenerate_variants(
+        self,
+        experiment_id: str,
+        user_id: str,
+        num_variants: int = 2,
+    ) -> Experiment | None:
+        """
+        Regenerate variants for an experiment (delete old ones and create new).
+
+        Args:
+            experiment_id: Experiment ID.
+            user_id: User ID for authorization.
+            num_variants: Number of new variants to generate.
+
+        Returns:
+            Updated Experiment or None if not found/cannot regenerate.
+        """
+        experiment = await self.get_experiment(experiment_id, user_id)
+        if experiment is None:
+            return None
+
+        # Only allow regeneration for non-completed experiments
+        if experiment.status in [ExperimentStatus.COMPLETED, ExperimentStatus.ARCHIVED]:
+            return None
+
+        # Delete existing non-control variants
+        await Variant.find(
+            Variant.experiment_id == experiment_id,
+            Variant.is_control == False,
+        ).delete()
+        
+        logger.info(f"Deleted old variants for experiment {experiment_id}, regenerating...")
+
+        # Set status back to draft while regenerating
+        experiment.status = ExperimentStatus.DRAFT
+        experiment.updated_at = datetime.utcnow()
+        await experiment.save()
+
+        # Trigger async variant generation
+        task = asyncio.create_task(
+            self._generate_variants_async(
+                experiment_id=experiment_id,
+                target_url=experiment.target_url,
+                optimization_goal=experiment.description,
+                num_variants=num_variants,
+            )
+        )
+        
+        def log_exception(t):
+            if t.exception():
+                logger.error(f"Regeneration failed: {t.exception()}")
+        task.add_done_callback(log_exception)
+
+        return experiment
+
     async def complete_experiment(
         self,
         experiment_id: str,
