@@ -25,7 +25,7 @@ class OpenRouterClient:
     """
 
     BASE_URL = "https://openrouter.ai/api/v1"
-    MODEL = "anthropic/claude-sonnet-4"  # Using Claude Sonnet 4 for cost efficiency
+    MODEL = "moonshotai/kimi-k2.5"  # Using Moonshot Kimi K2.5
 
     def __init__(self, api_key: str | None = None):
         """
@@ -91,7 +91,7 @@ class OpenRouterClient:
         response_model: type[T],
         *,
         temperature: float = 0.3,
-        max_tokens: int = 4096,
+        max_tokens: int = 8192,
     ) -> T:
         """
         Send a chat completion request with structured output enforcement.

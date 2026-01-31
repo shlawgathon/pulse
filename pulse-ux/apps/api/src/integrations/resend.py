@@ -48,7 +48,7 @@ class ResendClient:
         subject: str,
         html: str,
         *,
-        from_email: str = "Pulse UX <noreply@pulse-ux.com>",
+        from_email: str = "Pulse UX <onboarding@resend.dev>",
         text: str | None = None,
         reply_to: str | None = None,
     ) -> dict:

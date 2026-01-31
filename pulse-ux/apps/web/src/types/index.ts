@@ -56,6 +56,7 @@ export interface Experiment {
   ended_at?: string | null;
   winner_variant_id?: string | null;
   base_screenshot_url?: string | null;
+  base_html_snapshot?: string | null;
 }
 
 export interface ExperimentCreate {

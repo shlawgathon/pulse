@@ -9,6 +9,9 @@ This service handles:
 
 import secrets
 from datetime import datetime
+from urllib.parse import urlparse
+
+from beanie import PydanticObjectId
 
 from src.models.site import Site
 from src.config import settings
@@ -20,6 +23,30 @@ class SiteService:
     def generate_public_key(self) -> str:
         """Generate a unique public key for a site."""
         return f"pk_{secrets.token_urlsafe(24)}"
+
+    def normalize_domain(self, domain_or_url: str) -> str:
+        """
+        Extract the domain from a URL or normalize a bare domain.
+        
+        Examples:
+            - "https://example.com/path" -> "example.com"
+            - "http://example.com" -> "example.com"
+            - "example.com" -> "example.com"
+        """
+        domain = domain_or_url.strip()
+        
+        # If it looks like a URL, parse it
+        if domain.startswith(("http://", "https://")):
+            parsed = urlparse(domain)
+            domain = parsed.netloc or parsed.path
+        
+        # Remove any trailing slashes or paths
+        domain = domain.split("/")[0]
+        
+        # Remove port if present
+        domain = domain.split(":")[0]
+        
+        return domain.lower()
 
     def generate_script_tag(self, public_key: str) -> str:
         """
@@ -49,19 +76,22 @@ class SiteService:
         Args:
             owner_id: User ID of the site owner.
             name: Display name for the site.
-            domain: Site domain.
+            domain: Site domain or URL.
             github_repo: Optional GitHub repository URL.
             github_pat: Optional GitHub PAT.
 
         Returns:
             Created Site document.
         """
+        # Normalize the domain (extract from URL if needed)
+        normalized_domain = self.normalize_domain(domain)
+        
         site = Site(
             name=name,
-            domain=domain,
+            domain=normalized_domain,
             owner_id=owner_id,
             public_key=self.generate_public_key(),
-            allowed_origins=[f"https://{domain}", f"http://{domain}"],
+            allowed_origins=[f"https://{normalized_domain}", f"http://{normalized_domain}"],
             github_repo=github_repo,
             github_pat=github_pat,
         )
@@ -95,7 +125,7 @@ class SiteService:
             Site document or None if not found.
         """
         return await Site.find_one(
-            Site.id == site_id,
+            Site.id == PydanticObjectId(site_id),
             Site.owner_id == owner_id,
         )
 

@@ -35,13 +35,16 @@ async def scrape_url(url: str, include_screenshot: bool = True) -> dict:
             wait_for=2000,
         )
 
+        html_len = len(result.raw_html or result.html or "")
+        logger.info(f"✅ Firecrawl scrape SUCCESS: {url} - HTML length: {html_len}, screenshot: {'yes' if result.screenshot else 'no'}")
+
         return {
             "html": result.raw_html or result.html or "",
             "screenshot": result.screenshot,
             "metadata": result.metadata,
         }
     except Exception as e:
-        logger.error(f"Failed to scrape {url}: {e}")
+        logger.error(f"❌ Firecrawl scrape FAILED for {url}: {e}")
         raise
 
 
