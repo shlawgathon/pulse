@@ -147,6 +147,58 @@ class AuthService:
 
         return user
 
+    async def authenticate_oauth_user(
+        self,
+        email: EmailStr,
+        name: str,
+        provider: str,
+        provider_id: str,
+        avatar_url: Optional[str] = None,
+    ) -> User:
+        """
+        Authenticate or register a user via OAuth provider.
+
+        Args:
+            email: User's email from provider.
+            name: User's name from provider.
+            provider: Provider name (e.g., 'google', 'github').
+            provider_id: Unique ID from the provider.
+            avatar_url: Optional avatar URL.
+
+        Returns:
+            User document.
+        """
+        user = await User.find_one(User.email == email)
+        
+        if user:
+            # Update info if needed
+            user_updated = False
+            if not user.auth_provider_id:
+                user.auth_provider = provider
+                user.auth_provider_id = provider_id
+                user_updated = True
+            
+            if avatar_url and not user.avatar_url:
+                user.avatar_url = avatar_url
+                user_updated = True
+                
+            user.last_login_at = datetime.utcnow()
+            await user.save()
+            return user
+
+        # Create new user
+        user = User(
+            email=email,
+            name=name,
+            auth_provider=provider,
+            auth_provider_id=provider_id,
+            avatar_url=avatar_url,
+            is_verified=True,  # OAuth emails are generally verified
+            last_login_at=datetime.utcnow()
+        )
+        await user.insert()
+        return user
+
     async def create_session(
         self,
         user: User,

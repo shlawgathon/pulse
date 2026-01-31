@@ -41,6 +41,16 @@ class RefreshRequest(BaseModel):
     refresh_token: str = Field(..., description="Refresh token")
 
 
+class OAuthLoginRequest(BaseModel):
+    """Request body for OAuth login."""
+
+    email: EmailStr = Field(..., description="User's email address")
+    name: str = Field(..., description="User's display name")
+    provider: str = Field(..., description="Provider name (google, github)")
+    provider_id: str = Field(..., description="Provider user ID")
+    avatar_url: str | None = Field(None, description="User's avatar URL")
+
+
 class TokenResponse(BaseModel):
     """Response containing access and refresh tokens."""
 
@@ -132,6 +142,36 @@ async def login(request: LoginRequest) -> AuthResponse:
             detail="Invalid email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
+
+    access_token, refresh_token = await auth_service.create_session(user)
+
+    return AuthResponse(
+        user=UserResponse(
+            id=str(user.id),
+            email=user.email,
+            name=user.name,
+            organization_name=user.organization_name,
+            avatar_url=user.avatar_url,
+        ),
+        access_token=access_token,
+        refresh_token=refresh_token,
+    )
+
+
+@router.post("/oauth/login", response_model=AuthResponse)
+async def oauth_login(request: OAuthLoginRequest) -> AuthResponse:
+    """
+    Authenticate a user via OAuth provider.
+    
+    Creates a new user if one doesn't exist with the given email.
+    """
+    user = await auth_service.authenticate_oauth_user(
+        email=request.email,
+        name=request.name,
+        provider=request.provider,
+        provider_id=request.provider_id,
+        avatar_url=request.avatar_url,
+    )
 
     access_token, refresh_token = await auth_service.create_session(user)
 
