@@ -12,6 +12,9 @@ from datetime import datetime
 from src.services.llm_service import llm_service
 from src.models.experiment import Experiment, ExperimentStatus
 from src.models.variant import Variant, DOMPatch, PatchAction
+from src.models.user import User
+from src.integrations.resend import resend_client
+from src.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -84,6 +87,20 @@ async def generate_variants_for_experiment(
             experiment.status = ExperimentStatus.PENDING
             experiment.updated_at = datetime.utcnow()
             await experiment.save()
+
+            # Send email notification to creator
+            try:
+                user = await User.get(experiment.created_by)
+                if user and user.email:
+                    experiment_url = f"{settings.APP_URL}/experiments/{experiment_id}"
+                    await resend_client.send_experiment_ready(
+                        to=user.email,
+                        experiment_name=experiment.name,
+                        experiment_url=experiment_url,
+                    )
+                    logger.info(f"Sent experiment ready email to {user.email}")
+            except Exception as email_error:
+                logger.warning(f"Failed to send experiment ready email: {email_error}")
 
         logger.info(f"Created {len(variant_ids)} variants for experiment {experiment_id}")
         return variant_ids

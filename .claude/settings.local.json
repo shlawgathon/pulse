@@ -7,7 +7,15 @@
       "Bash(dir /b \"C:\\\\Users\\\\aritr\\\\Desktop\\\\GitHub Projects\\\\pulse\\\\pulse-ux\\\\apps\\\\api\")",
       "Bash(findstr:*)",
       "Bash(git config:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(bun remove:*)",
+      "Bash(bun run build)",
+      "Bash(bun install)",
+      "Bash(bun install:*)",
+      "WebFetch(domain:ui.shadcn.com)",
+      "Bash(bun add:*)",
+      "Bash(bunx shadcn@latest add dropdown-menu:*)",
+      "Bash(bun run lint)"
     ]
   }
 }

@@ -12,6 +12,8 @@ import logging
 from datetime import datetime
 from typing import Any
 
+from beanie import PydanticObjectId
+
 from src.models.experiment import Experiment, ExperimentStatus
 from src.models.variant import Variant
 from src.models.site import Site
@@ -130,10 +132,12 @@ class ExperimentService:
 
         except Exception as e:
             logger.error(f"Variant generation failed for experiment {experiment_id}: {e}")
-            # Update experiment with error
+            # Update experiment with error (truncate to avoid massive error traces)
             experiment = await Experiment.get(experiment_id)
             if experiment:
-                experiment.description = f"Variant generation failed: {str(e)}"
+                error_msg = str(e)[:500]  # Truncate long error messages
+                original_desc = experiment.description or ""
+                experiment.description = f"[Error: {error_msg}] {original_desc}".strip()
                 experiment.updated_at = datetime.utcnow()
                 await experiment.save()
 
@@ -179,7 +183,7 @@ class ExperimentService:
             Experiment document or None.
         """
         return await Experiment.find_one(
-            Experiment.id == experiment_id,
+            Experiment.id == PydanticObjectId(experiment_id),
             Experiment.created_by == user_id,
         )
 
@@ -276,12 +280,13 @@ class ExperimentService:
         if experiment is None:
             return None
 
-        if experiment.status not in [ExperimentStatus.ACTIVE, ExperimentStatus.PAUSED]:
+        # Allow completing from any state except already completed or archived
+        if experiment.status in [ExperimentStatus.COMPLETED, ExperimentStatus.ARCHIVED]:
             return None
 
         # Verify winner variant exists
         winner = await Variant.find_one(
-            Variant.id == winner_variant_id,
+            Variant.id == PydanticObjectId(winner_variant_id),
             Variant.experiment_id == experiment_id,
         )
         if winner is None:

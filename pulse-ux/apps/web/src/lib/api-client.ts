@@ -10,6 +10,24 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 // Token storage keys
 const ACCESS_TOKEN_KEY = "pulse_access_token";
 const REFRESH_TOKEN_KEY = "pulse_refresh_token";
+const AUTH_COOKIE_NAME = "pulse_authenticated";
+
+/**
+ * Set a cookie (for middleware auth checks).
+ */
+function setCookie(name: string, value: string, days: number): void {
+  if (typeof document === "undefined") return;
+  const expires = new Date(Date.now() + days * 864e5).toUTCString();
+  document.cookie = `${name}=${value}; expires=${expires}; path=/; SameSite=Lax`;
+}
+
+/**
+ * Delete a cookie.
+ */
+function deleteCookie(name: string): void {
+  if (typeof document === "undefined") return;
+  document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
+}
 
 /**
  * Get stored tokens from localStorage.
@@ -23,26 +41,29 @@ export function getTokens(): {
   }
   return {
     accessToken: localStorage.getItem(ACCESS_TOKEN_KEY),
-    refreshToken: localStorage.getItem(REFRESH_TOKEN_KEY),
+    refreshToken: localStorage.getItem(REFRESH_TOKEN_KEY)
   };
 }
 
 /**
- * Store tokens in localStorage.
+ * Store tokens in localStorage and set auth cookie for middleware.
  */
 export function setTokens(accessToken: string, refreshToken: string): void {
   if (typeof window === "undefined") return;
   localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
   localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+  // Set auth cookie for middleware (7 days expiry)
+  setCookie(AUTH_COOKIE_NAME, "true", 7);
 }
 
 /**
- * Clear stored tokens.
+ * Clear stored tokens and auth cookie.
  */
 export function clearTokens(): void {
   if (typeof window === "undefined") return;
   localStorage.removeItem(ACCESS_TOKEN_KEY);
   localStorage.removeItem(REFRESH_TOKEN_KEY);
+  deleteCookie(AUTH_COOKIE_NAME);
 }
 
 /**
@@ -71,9 +92,9 @@ async function refreshAccessToken(): Promise<string | null> {
     const response = await fetch(`${API_URL}/api/v1/auth/refresh`, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
+        "Content-Type": "application/json"
       },
-      body: JSON.stringify({ refresh_token: refreshToken }),
+      body: JSON.stringify({ refresh_token: refreshToken })
     });
 
     if (!response.ok) {
@@ -93,36 +114,31 @@ async function refreshAccessToken(): Promise<string | null> {
 /**
  * Make an authenticated API request.
  */
-export async function apiRequest<T>(
-  endpoint: string,
-  options: RequestInit = {}
-): Promise<T> {
+export async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const { accessToken } = getTokens();
 
   const headers: HeadersInit = {
     "Content-Type": "application/json",
-    ...options.headers,
+    ...options.headers
   };
 
   if (accessToken) {
-    (headers as Record<string, string>)["Authorization"] =
-      `Bearer ${accessToken}`;
+    (headers as Record<string, string>)["Authorization"] = `Bearer ${accessToken}`;
   }
 
   let response = await fetch(`${API_URL}${endpoint}`, {
     ...options,
-    headers,
+    headers
   });
 
   // If unauthorized, try to refresh the token
   if (response.status === 401 && accessToken) {
     const newToken = await refreshAccessToken();
     if (newToken) {
-      (headers as Record<string, string>)["Authorization"] =
-        `Bearer ${newToken}`;
+      (headers as Record<string, string>)["Authorization"] = `Bearer ${newToken}`;
       response = await fetch(`${API_URL}${endpoint}`, {
         ...options,
-        headers,
+        headers
       });
     }
   }
@@ -156,15 +172,14 @@ export const api = {
   post: <T>(endpoint: string, data?: unknown) =>
     apiRequest<T>(endpoint, {
       method: "POST",
-      body: data ? JSON.stringify(data) : undefined,
+      body: data ? JSON.stringify(data) : undefined
     }),
 
   patch: <T>(endpoint: string, data?: unknown) =>
     apiRequest<T>(endpoint, {
       method: "PATCH",
-      body: data ? JSON.stringify(data) : undefined,
+      body: data ? JSON.stringify(data) : undefined
     }),
 
-  delete: <T>(endpoint: string) =>
-    apiRequest<T>(endpoint, { method: "DELETE" }),
+  delete: <T>(endpoint: string) => apiRequest<T>(endpoint, { method: "DELETE" })
 };

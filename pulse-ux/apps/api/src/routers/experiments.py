@@ -18,6 +18,7 @@ from src.dependencies import get_current_user
 from src.models.user import User
 from src.models.experiment import ExperimentStatus
 from src.services.experiment_service import experiment_service
+from src.services.daytona_preview_service import daytona_preview_service
 
 router = APIRouter()
 
@@ -51,6 +52,7 @@ class ExperimentResponse(BaseModel):
     ended_at: str | None = None
     winner_variant_id: str | None = None
     base_screenshot_url: str | None = None
+    base_html_snapshot: str | None = None
 
 
 class VariantResponse(BaseModel):
@@ -439,6 +441,7 @@ async def get_comparison(
             ended_at=experiment.ended_at.isoformat() if experiment.ended_at else None,
             winner_variant_id=experiment.winner_variant_id,
             base_screenshot_url=experiment.base_screenshot_url,
+            base_html_snapshot=experiment.base_html_snapshot,
         ),
         variants=[
             VariantResponse(
@@ -454,4 +457,119 @@ async def get_comparison(
             for v in variants
         ],
         ai_analysis=ai_analysis,
+    )
+
+
+class PreviewRequest(BaseModel):
+    """Request body for creating a variant preview."""
+
+    ttl_seconds: int = Field(default=3600, ge=60, le=7200, description="Preview TTL in seconds")
+
+
+class PreviewResponse(BaseModel):
+    """Response with preview URL."""
+
+    preview_url: str
+    session_id: str
+    expires_at: str
+    available: bool = True
+
+
+class PreviewStatusResponse(BaseModel):
+    """Response indicating preview availability."""
+
+    available: bool
+    message: str
+
+
+@router.get("/preview/status", response_model=PreviewStatusResponse)
+async def get_preview_status(
+    current_user: User = Depends(get_current_user),
+) -> PreviewStatusResponse:
+    """
+    Check if Daytona live preview is available.
+
+    Returns:
+        Status indicating if live preview is configured.
+    """
+    available = daytona_preview_service.is_available()
+    return PreviewStatusResponse(
+        available=available,
+        message="Live preview is available" if available else "Daytona API key not configured",
+    )
+
+
+@router.post("/{experiment_id}/variants/{variant_id}/preview", response_model=PreviewResponse)
+async def create_variant_preview(
+    experiment_id: str,
+    variant_id: str,
+    request: PreviewRequest | None = None,
+    current_user: User = Depends(get_current_user),
+) -> PreviewResponse:
+    """
+    Create a live Daytona preview for a variant.
+
+    Args:
+        experiment_id: The experiment's ID.
+        variant_id: The variant's ID.
+        request: Optional preview configuration.
+        current_user: The authenticated user.
+
+    Returns:
+        Preview URL and session details.
+
+    Raises:
+        HTTPException: If experiment/variant not found or preview unavailable.
+    """
+    # Check if Daytona is available
+    if not daytona_preview_service.is_available():
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Live preview is not available. Daytona API key not configured.",
+        )
+
+    # Get experiment to verify access and get base HTML
+    comparison = await experiment_service.get_comparison(
+        experiment_id=experiment_id,
+        user_id=str(current_user.id),
+    )
+
+    if comparison is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Experiment not found")
+
+    experiment, variants, _ = comparison
+
+    # Find the variant
+    variant = next((v for v in variants if str(v.id) == variant_id), None)
+    if variant is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Variant not found")
+
+    # Check for base HTML
+    if not experiment.base_html_snapshot:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No HTML snapshot available for this experiment",
+        )
+
+    ttl = request.ttl_seconds if request else 3600
+
+    # Create the preview
+    session = await daytona_preview_service.create_preview(
+        experiment_id=experiment_id,
+        variant_id=variant_id,
+        base_html=experiment.base_html_snapshot,
+        patches=[p.model_dump() for p in variant.patches],
+        ttl_seconds=ttl,
+    )
+
+    if session is None:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to create preview. Please try again.",
+        )
+
+    return PreviewResponse(
+        preview_url=session.preview_url,
+        session_id=session.id,
+        expires_at=session.expires_at.isoformat(),
     )

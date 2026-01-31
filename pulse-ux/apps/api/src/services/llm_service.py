@@ -98,6 +98,7 @@ Generate variants that:
 2. Use valid CSS selectors that will reliably target elements
 3. Focus on high-impact changes (CTAs, headlines, forms, trust signals)
 4. Are different from each other (don't just vary colors)
+5. Keep each variant focused: 3-5 patches maximum per variant
 
 Available patch actions:
 - style: Modify CSS properties (requires property_name)
@@ -111,16 +112,17 @@ Available patch actions:
 
 For each variant, provide:
 - A descriptive name (e.g., "Bold CTA with Urgency")
-- A description of what it changes and why
-- Specific DOM patches with valid CSS selectors
+- A brief description (1-2 sentences max)
+- 3-5 specific DOM patches with valid CSS selectors
+- Keep reasoning brief (1 sentence per patch)
 
-Generate {num_variants} distinct variants plus an overall analysis."""
+Generate {num_variants} distinct variants plus a brief (2-3 sentence) analysis."""
 
         response = await openrouter_client.chat_completion_structured(
             messages=[{"role": "user", "content": prompt}],
             response_model=VariantGenerationResponse,
             temperature=0.7,
-            max_tokens=4096,
+            max_tokens=8192,
         )
 
         return response

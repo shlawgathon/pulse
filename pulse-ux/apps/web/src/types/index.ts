@@ -40,13 +40,7 @@ export interface SiteCreate {
 }
 
 // Experiment types
-export type ExperimentStatus =
-  | "draft"
-  | "pending"
-  | "active"
-  | "paused"
-  | "completed"
-  | "archived";
+export type ExperimentStatus = "draft" | "pending" | "active" | "paused" | "completed" | "archived";
 
 export interface Experiment {
   id: string;
@@ -62,6 +56,7 @@ export interface Experiment {
   ended_at?: string | null;
   winner_variant_id?: string | null;
   base_screenshot_url?: string | null;
+  base_html_snapshot?: string | null;
 }
 
 export interface ExperimentCreate {
@@ -75,15 +70,7 @@ export interface ExperimentCreate {
 }
 
 // Variant types
-export type PatchAction =
-  | "style"
-  | "class_add"
-  | "class_remove"
-  | "attribute"
-  | "text"
-  | "html"
-  | "hide"
-  | "show";
+export type PatchAction = "style" | "class_add" | "class_remove" | "attribute" | "text" | "html" | "hide" | "show";
 
 export interface DOMPatch {
   action: PatchAction;
@@ -130,4 +117,17 @@ export interface PullRequest {
 // API response types
 export interface ApiError {
   detail: string;
+}
+
+// Daytona Preview types
+export interface PreviewStatus {
+  available: boolean;
+  message: string;
+}
+
+export interface PreviewResponse {
+  preview_url: string;
+  session_id: string;
+  expires_at: string;
+  available: boolean;
 }

@@ -11,14 +11,30 @@ import hashlib
 import secrets
 from datetime import datetime, timedelta, timezone
 
+import bcrypt
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 
 from src.config import settings
 
 
-# Password hashing context using bcrypt with work factor 12
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+def _prepare_password_for_bcrypt(password: str) -> bytes:
+    """
+    Prepare a password for bcrypt hashing.
+    
+    Bcrypt has a 72-byte limit. For long passwords, we pre-hash with SHA-256
+    to get a fixed-length input. This is a standard pattern (used by Dropbox, etc.).
+    
+    Args:
+        password: Plain text password.
+        
+    Returns:
+        Password bytes safe for bcrypt (always <= 72 bytes).
+    """
+    password_bytes = password.encode("utf-8")
+    if len(password_bytes) > 72:
+        # Pre-hash long passwords with SHA-256 (produces 64-char hex string)
+        return hashlib.sha256(password_bytes).hexdigest().encode("utf-8")
+    return password_bytes
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -32,7 +48,8 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     Returns:
         True if password matches, False otherwise.
     """
-    return pwd_context.verify(plain_password, hashed_password)
+    prepared = _prepare_password_for_bcrypt(plain_password)
+    return bcrypt.checkpw(prepared, hashed_password.encode("utf-8"))
 
 
 def hash_password(password: str) -> str:
@@ -45,7 +62,9 @@ def hash_password(password: str) -> str:
     Returns:
         Bcrypt hash of the password.
     """
-    return pwd_context.hash(password)
+    prepared = _prepare_password_for_bcrypt(password)
+    salt = bcrypt.gensalt(rounds=12)
+    return bcrypt.hashpw(prepared, salt).decode("utf-8")
 
 
 def create_access_token(user_id: str) -> str:

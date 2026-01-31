@@ -88,6 +88,11 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  a,
+  button {
+    @apply cursor-pointer;
+  }
 }
 
 /* Detail.dev-style monospace CTA buttons */

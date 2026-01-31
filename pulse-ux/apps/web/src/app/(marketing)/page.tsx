@@ -22,10 +22,7 @@ export default function LandingPage() {
         />
 
         {/* Red accent line (like Detail.dev) */}
-        <div
-          className="absolute right-[33%] top-0 w-1 h-full bg-red-500 hidden lg:block"
-          aria-hidden="true"
-        />
+        <div className="absolute right-[33%] top-0 w-1 h-full bg-red-500 hidden lg:block" aria-hidden="true" />
 
         {/* Content */}
         <div className="relative z-10 container mx-auto px-6 pt-32 pb-20">
@@ -38,22 +35,19 @@ export default function LandingPage() {
             </h1>
 
             {/* Subheadline */}
-            <h2 className="text-2xl md:text-3xl font-semibold text-white/90 mb-6">
-              Let us show you.
-            </h2>
+            <h2 className="text-2xl md:text-3xl font-semibold text-white/90 mb-6">Let us show you.</h2>
 
             {/* Description */}
             <p className="text-lg text-white/70 mb-10 max-w-xl">
-              Pulse scans your site to find UX improvements. Each experiment
-              spends hours testing variants with real users to uncover
-              optimizations you&apos;ll be glad to ship.
+              Pulse scans your site to find UX improvements. Each experiment spends hours testing variants with real
+              users to uncover optimizations you&apos;ll be glad to ship.
             </p>
 
             {/* CTA Buttons */}
             <div className="flex flex-wrap gap-4">
               <Link
                 href="/register"
-                className="cta-button inline-flex items-center gap-2 bg-lime-400 text-black px-8 py-3 rounded-md hover:bg-lime-300 transition-colors"
+                className="cta-button inline-flex items-center gap-2 bg-primary text-primary-foreground px-8 py-3 rounded-md hover:bg-primary/90 transition-colors"
               >
                 TRY FOR FREE
                 <ArrowRight className="h-4 w-4" />
@@ -74,9 +68,7 @@ export default function LandingPage() {
       {/* Features Section */}
       <section id="features" className="py-24 bg-black">
         <div className="container mx-auto px-6">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-16">
-            How Pulse Works
-          </h2>
+          <h2 className="text-3xl md:text-4xl font-bold text-center mb-16">How Pulse Works</h2>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             {/* Feature 1 */}
@@ -86,8 +78,7 @@ export default function LandingPage() {
               </div>
               <h3 className="text-lg font-semibold mb-2">Scan Your Site</h3>
               <p className="text-white/60 text-sm">
-                We analyze your DOM structure to understand your current UX and
-                identify improvement opportunities.
+                We analyze your DOM structure to understand your current UX and identify improvement opportunities.
               </p>
             </div>
 
@@ -98,8 +89,7 @@ export default function LandingPage() {
               </div>
               <h3 className="text-lg font-semibold mb-2">Generate Variants</h3>
               <p className="text-white/60 text-sm">
-                Claude Opus 4.5 generates UX improvements tailored to your
-                specific conversion goals.
+                Claude Opus 4.5 generates UX improvements tailored to your specific conversion goals.
               </p>
             </div>
 
@@ -110,8 +100,7 @@ export default function LandingPage() {
               </div>
               <h3 className="text-lg font-semibold mb-2">Run Experiments</h3>
               <p className="text-white/60 text-sm">
-                A/B test variants with real users. Our script applies changes
-                at runtime—no deploys needed.
+                A/B test variants with real users. Our script applies changes at runtime—no deploys needed.
               </p>
             </div>
 
@@ -122,8 +111,7 @@ export default function LandingPage() {
               </div>
               <h3 className="text-lg font-semibold mb-2">Ship the Winner</h3>
               <p className="text-white/60 text-sm">
-                When you pick a winner, we generate a PR with the code changes
-                ready for review.
+                When you pick a winner, we generate a PR with the code changes ready for review.
               </p>
             </div>
           </div>
@@ -153,16 +141,13 @@ export default function LandingPage() {
       {/* CTA Section */}
       <section className="py-24">
         <div className="container mx-auto px-6 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-6">
-            Ready to optimize your UX?
-          </h2>
+          <h2 className="text-3xl md:text-4xl font-bold mb-6">Ready to optimize your UX?</h2>
           <p className="text-lg text-white/70 mb-10 max-w-xl mx-auto">
-            Start finding conversion opportunities today. No credit card
-            required.
+            Start finding conversion opportunities today. No credit card required.
           </p>
           <Link
             href="/register"
-            className="cta-button inline-flex items-center gap-2 bg-lime-400 text-black px-8 py-4 rounded-md hover:bg-lime-300 transition-colors text-lg"
+            className="cta-button inline-flex items-center gap-2 bg-primary text-primary-foreground px-8 py-4 rounded-md hover:bg-primary/90 transition-colors text-lg"
           >
             GET STARTED FOR FREE
             <ArrowRight className="h-5 w-5" />
