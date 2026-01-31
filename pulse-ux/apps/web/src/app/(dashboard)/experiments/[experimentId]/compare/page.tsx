@@ -23,11 +23,9 @@ export default function CompareVariantsPage() {
   const queryClient = useQueryClient();
   const experimentId = params.experimentId as string;
 
-  const [selectedVariants, setSelectedVariants] = useState<[string, string]>([
-    "",
-    "",
-  ]);
   const [syncScroll, setSyncScroll] = useState(true);
+  // Track user-selected variants (null = use defaults)
+  const [userSelectedVariants, setUserSelectedVariants] = useState<[string | null, string | null]>([null, null]);
 
   const leftPanelRef = useRef<HTMLDivElement>(null);
   const rightPanelRef = useRef<HTMLDivElement>(null);
@@ -52,21 +50,24 @@ export default function CompareVariantsPage() {
     },
   });
 
-  // Initialize selected variants
-  useEffect(() => {
-    if (comparison?.variants && comparison.variants.length >= 2) {
-      const control = comparison.variants.find((v) => v.is_control);
-      const firstTreatment = comparison.variants.find((v) => !v.is_control);
-      if (control && firstTreatment) {
-        setSelectedVariants([control.id, firstTreatment.id]);
-      } else if (comparison.variants.length >= 2) {
-        setSelectedVariants([
-          comparison.variants[0].id,
-          comparison.variants[1].id,
-        ]);
-      }
+  // Compute default selected variants from comparison data
+  const defaultSelectedVariants = useMemo((): [string, string] => {
+    if (!comparison?.variants || comparison.variants.length < 2) {
+      return ["", ""];
     }
+    const control = comparison.variants.find((v) => v.is_control);
+    const firstTreatment = comparison.variants.find((v) => !v.is_control);
+    if (control && firstTreatment) {
+      return [control.id, firstTreatment.id];
+    }
+    return [comparison.variants[0].id, comparison.variants[1].id];
   }, [comparison]);
+
+  // Derive actual selected variants from user selection or defaults
+  const selectedVariants: [string, string] = useMemo(() => [
+    userSelectedVariants[0] ?? defaultSelectedVariants[0],
+    userSelectedVariants[1] ?? defaultSelectedVariants[1],
+  ], [userSelectedVariants, defaultSelectedVariants]);
 
   // Synchronized scrolling with passive event listeners
   useEffect(() => {
@@ -122,11 +123,11 @@ export default function CompareVariantsPage() {
 
   // Callbacks
   const handleLeftVariantChange = useCallback((value: string) => {
-    setSelectedVariants((prev) => [value, prev[1]]);
+    setUserSelectedVariants((prev) => [value, prev[1]]);
   }, []);
 
   const handleRightVariantChange = useCallback((value: string) => {
-    setSelectedVariants((prev) => [prev[0], value]);
+    setUserSelectedVariants((prev) => [prev[0], value]);
   }, []);
 
   const handleSyncScrollChange = useCallback(

@@ -4,7 +4,7 @@
  * Login page with email/password form.
  * Uses react-hook-form with zod validation.
  */
-import { useState, useCallback } from "react";
+import { useState, useCallback, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -34,6 +34,28 @@ const loginSchema = z.object({
 type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoginFormSkeleton />}>
+      <LoginForm />
+    </Suspense>
+  );
+}
+
+function LoginFormSkeleton() {
+  return (
+    <div className="bg-white/5 rounded-lg border border-white/10 p-8 animate-pulse">
+      <div className="h-8 bg-white/10 rounded w-48 mx-auto mb-2" />
+      <div className="h-4 bg-white/10 rounded w-64 mx-auto mb-8" />
+      <div className="space-y-4">
+        <div className="h-10 bg-white/10 rounded" />
+        <div className="h-10 bg-white/10 rounded" />
+        <div className="h-10 bg-white/10 rounded" />
+      </div>
+    </div>
+  );
+}
+
+function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [showPassword, setShowPassword] = useState(false);

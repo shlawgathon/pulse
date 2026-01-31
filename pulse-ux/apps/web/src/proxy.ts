@@ -2,14 +2,14 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 /**
- * Middleware for authentication checks.
+ * Proxy for authentication checks.
  * Protects dashboard routes and redirects unauthenticated users to login.
  */
 
 const PUBLIC_PATHS = ["/", "/login", "/register"];
 const AUTH_COOKIE_NAME = "pulse_authenticated";
 
-export function middleware(request: NextRequest) {
+export default function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Allow public paths
