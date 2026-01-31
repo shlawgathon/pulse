@@ -142,12 +142,7 @@ function injectBaseTag(html: string, targetUrl?: string): string {
     // Try to inject before first link/script/style
     const firstResourceMatch = html.match(/<(link|script|style)/i);
     if (firstResourceMatch && firstResourceMatch.index !== undefined) {
-      return (
-        html.slice(0, firstResourceMatch.index) +
-        baseTag +
-        "\n" +
-        html.slice(firstResourceMatch.index)
-      );
+      return html.slice(0, firstResourceMatch.index) + baseTag + "\n" + html.slice(firstResourceMatch.index);
     }
 
     // Fallback: prepend
@@ -206,7 +201,7 @@ function injectDarkMode(html: string): string {
 function injectPatchScript(html: string, patches: DOMPatch[], targetUrl?: string): string {
   // First inject base tag to fix relative URLs
   let processedHtml = injectBaseTag(html, targetUrl);
-  
+
   // Inject dark mode support
   processedHtml = injectDarkMode(processedHtml);
 

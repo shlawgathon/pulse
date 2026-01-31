@@ -60,7 +60,7 @@ export default function NewExperimentPage() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="p-6 max-w-2xl mx-auto">
       <div className="mb-8">
         <h1 className="text-2xl font-semibold text-foreground">Create Experiment</h1>
         <p className="mt-1 text-sm text-muted-foreground">Set up a new A/B test to optimize your UX</p>

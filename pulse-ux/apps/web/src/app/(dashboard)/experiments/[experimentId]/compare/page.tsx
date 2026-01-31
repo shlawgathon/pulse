@@ -8,7 +8,7 @@ import { api } from "@/lib/api-client";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PageLoading } from "@/components/loading-spinner";
-import { VariantPreview, VariantPreviewFallback } from "@/components/variant-preview";
+import { VariantPreview } from "@/components/variant-preview";
 import { formatConversionRate } from "@/lib/utils";
 import type { ComparisonData, Variant } from "@/types";
 
@@ -155,7 +155,7 @@ export default function CompareVariantsPage() {
   }
 
   return (
-    <div className="h-[calc(100vh-8rem)] flex flex-col">
+    <div className="p-6 h-[calc(100vh-8rem)] flex flex-col">
       {/* Header */}
       <div className="flex-shrink-0 pb-4 border-b">
         <div className="flex items-center justify-between">
