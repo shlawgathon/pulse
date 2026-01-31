@@ -13,7 +13,7 @@ export function ErrorAlert({
   error,
   title = "Error",
   className,
-  fallbackMessage = "An unexpected error occurred. Please try again.",
+  fallbackMessage = "An unexpected error occurred. Please try again."
 }: ErrorAlertProps) {
   if (!error) return null;
 
@@ -39,10 +39,7 @@ export function FormError({ error, className }: FormErrorProps) {
   const message = error instanceof Error ? error.message : error;
 
   return (
-    <div
-      className={cn("rounded-md bg-destructive/10 p-4", className)}
-      role="alert"
-    >
+    <div className={cn("rounded-md bg-destructive/10 p-4", className)} role="alert">
       <p className="text-sm text-destructive">{message}</p>
     </div>
   );

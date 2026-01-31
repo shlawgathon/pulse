@@ -4,11 +4,7 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
-export default function AuthLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="dark min-h-screen bg-black text-white flex flex-col">
       {/* Back to home link */}

@@ -4,7 +4,7 @@
  * Login page with email/password form.
  * Uses react-hook-form with zod validation.
  */
-import { useState, useCallback } from "react";
+import { useState, useCallback, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -15,25 +15,40 @@ import { toast } from "sonner";
 import { api, setTokens } from "@/lib/api-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { ButtonLoading } from "@/components/loading-spinner";
 import type { AuthResponse } from "@/types";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
-  password: z.string().min(1, "Password is required"),
+  password: z.string().min(1, "Password is required")
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoginFormSkeleton />}>
+      <LoginForm />
+    </Suspense>
+  );
+}
+
+function LoginFormSkeleton() {
+  return (
+    <div className="bg-white/5 rounded-lg border border-white/10 p-8 animate-pulse">
+      <div className="h-8 bg-white/10 rounded w-48 mx-auto mb-2" />
+      <div className="h-4 bg-white/10 rounded w-64 mx-auto mb-8" />
+      <div className="space-y-4">
+        <div className="h-10 bg-white/10 rounded" />
+        <div className="h-10 bg-white/10 rounded" />
+        <div className="h-10 bg-white/10 rounded" />
+      </div>
+    </div>
+  );
+}
+
+function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [showPassword, setShowPassword] = useState(false);
@@ -42,15 +57,15 @@ export default function LoginPage() {
     resolver: zodResolver(loginSchema),
     defaultValues: {
       email: "",
-      password: "",
-    },
+      password: ""
+    }
   });
 
   const onSubmit = async (data: LoginFormData) => {
     try {
       const response = await api.post<AuthResponse>("/api/v1/auth/login", {
         email: data.email,
-        password: data.password,
+        password: data.password
       });
 
       setTokens(response.access_token, response.refresh_token);
@@ -60,9 +75,7 @@ export default function LoginPage() {
       const from = searchParams.get("from") || "/experiments";
       router.push(from);
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Invalid email or password"
-      );
+      toast.error(error instanceof Error ? error.message : "Invalid email or password");
     }
   };
 
@@ -73,9 +86,7 @@ export default function LoginPage() {
   return (
     <div className="bg-white/5 rounded-lg border border-white/10 p-8">
       <h1 className="text-2xl font-bold text-center mb-2">Welcome back</h1>
-      <p className="text-white/60 text-center mb-8">
-        Sign in to your Pulse account
-      </p>
+      <p className="text-white/60 text-center mb-8">Sign in to your Pulse account</p>
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -137,10 +148,7 @@ export default function LoginPage() {
             disabled={form.formState.isSubmitting}
             className="cta-button w-full bg-primary text-primary-foreground py-3 hover:bg-primary/90"
           >
-            <ButtonLoading
-              loading={form.formState.isSubmitting}
-              loadingText="SIGNING IN..."
-            >
+            <ButtonLoading loading={form.formState.isSubmitting} loadingText="SIGNING IN...">
               SIGN IN
             </ButtonLoading>
           </Button>

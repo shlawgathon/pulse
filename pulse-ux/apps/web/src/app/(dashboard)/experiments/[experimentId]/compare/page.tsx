@@ -6,13 +6,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Image from "next/image";
 import { api } from "@/lib/api-client";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PageLoading } from "@/components/loading-spinner";
 import { formatConversionRate } from "@/lib/utils";
 import type { ComparisonData, Variant } from "@/types";
@@ -23,11 +17,9 @@ export default function CompareVariantsPage() {
   const queryClient = useQueryClient();
   const experimentId = params.experimentId as string;
 
-  const [selectedVariants, setSelectedVariants] = useState<[string, string]>([
-    "",
-    "",
-  ]);
   const [syncScroll, setSyncScroll] = useState(true);
+  // Track user-selected variants (null = use defaults)
+  const [userSelectedVariants, setUserSelectedVariants] = useState<[string | null, string | null]>([null, null]);
 
   const leftPanelRef = useRef<HTMLDivElement>(null);
   const rightPanelRef = useRef<HTMLDivElement>(null);
@@ -35,38 +27,43 @@ export default function CompareVariantsPage() {
 
   const { data: comparison, isLoading } = useQuery({
     queryKey: ["experiment-comparison", experimentId],
-    queryFn: () =>
-      api.get<ComparisonData>(`/api/v1/experiments/${experimentId}/comparison`),
+    queryFn: () => api.get<ComparisonData>(`/api/v1/experiments/${experimentId}/comparison`)
   });
 
   const selectWinner = useMutation({
     mutationFn: (variantId: string) =>
       api.post(`/api/v1/experiments/${experimentId}/complete`, {
-        winner_variant_id: variantId,
+        winner_variant_id: variantId
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["experiment-comparison", experimentId],
+        queryKey: ["experiment-comparison", experimentId]
       });
       router.push(`/experiments/${experimentId}`);
-    },
+    }
   });
 
-  // Initialize selected variants
-  useEffect(() => {
-    if (comparison?.variants && comparison.variants.length >= 2) {
-      const control = comparison.variants.find((v) => v.is_control);
-      const firstTreatment = comparison.variants.find((v) => !v.is_control);
-      if (control && firstTreatment) {
-        setSelectedVariants([control.id, firstTreatment.id]);
-      } else if (comparison.variants.length >= 2) {
-        setSelectedVariants([
-          comparison.variants[0].id,
-          comparison.variants[1].id,
-        ]);
-      }
+  // Compute default selected variants from comparison data
+  const defaultSelectedVariants = useMemo((): [string, string] => {
+    if (!comparison?.variants || comparison.variants.length < 2) {
+      return ["", ""];
     }
+    const control = comparison.variants.find((v) => v.is_control);
+    const firstTreatment = comparison.variants.find((v) => !v.is_control);
+    if (control && firstTreatment) {
+      return [control.id, firstTreatment.id];
+    }
+    return [comparison.variants[0].id, comparison.variants[1].id];
   }, [comparison]);
+
+  // Derive actual selected variants from user selection or defaults
+  const selectedVariants: [string, string] = useMemo(
+    () => [
+      userSelectedVariants[0] ?? defaultSelectedVariants[0],
+      userSelectedVariants[1] ?? defaultSelectedVariants[1]
+    ],
+    [userSelectedVariants, defaultSelectedVariants]
+  );
 
   // Synchronized scrolling with passive event listeners
   useEffect(() => {
@@ -122,19 +119,16 @@ export default function CompareVariantsPage() {
 
   // Callbacks
   const handleLeftVariantChange = useCallback((value: string) => {
-    setSelectedVariants((prev) => [value, prev[1]]);
+    setUserSelectedVariants((prev) => [value, prev[1]]);
   }, []);
 
   const handleRightVariantChange = useCallback((value: string) => {
-    setSelectedVariants((prev) => [prev[0], value]);
+    setUserSelectedVariants((prev) => [prev[0], value]);
   }, []);
 
-  const handleSyncScrollChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      setSyncScroll(e.target.checked);
-    },
-    []
-  );
+  const handleSyncScrollChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSyncScroll(e.target.checked);
+  }, []);
 
   const handleBack = useCallback(() => {
     router.back();
@@ -166,9 +160,7 @@ export default function CompareVariantsPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-xl font-semibold">Compare Variants</h1>
-            <p className="text-sm text-muted-foreground">
-              {comparison.experiment.name}
-            </p>
+            <p className="text-sm text-muted-foreground">{comparison.experiment.name}</p>
           </div>
           <div className="flex items-center gap-4">
             <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
@@ -191,9 +183,7 @@ export default function CompareVariantsPage() {
       {/* AI Analysis */}
       {comparison.ai_analysis && (
         <div className="flex-shrink-0 my-4 rounded-lg bg-muted/50 border p-4">
-          <p className="text-xs font-medium text-muted-foreground uppercase mb-2">
-            AI Analysis
-          </p>
+          <p className="text-xs font-medium text-muted-foreground uppercase mb-2">AI Analysis</p>
           <p className="text-sm">{comparison.ai_analysis}</p>
         </div>
       )}
@@ -203,10 +193,7 @@ export default function CompareVariantsPage() {
         {/* Left Panel */}
         <div className="flex flex-col min-h-0">
           <div className="flex-shrink-0 mb-3">
-            <Select
-              value={selectedVariants[0]}
-              onValueChange={handleLeftVariantChange}
-            >
+            <Select value={selectedVariants[0]} onValueChange={handleLeftVariantChange}>
               <SelectTrigger>
                 <SelectValue placeholder="Select variant" />
               </SelectTrigger>
@@ -224,9 +211,7 @@ export default function CompareVariantsPage() {
             <>
               <div className="flex-shrink-0 mb-3 flex items-center justify-between">
                 <div>
-                  <span className="text-2xl font-semibold">
-                    {getConversionRate(leftVariant)}
-                  </span>
+                  <span className="text-2xl font-semibold">{getConversionRate(leftVariant)}</span>
                   <span className="ml-2 text-sm text-muted-foreground">
                     ({leftVariant.conversions}/{leftVariant.impressions})
                   </span>
@@ -242,10 +227,7 @@ export default function CompareVariantsPage() {
                 )}
               </div>
 
-              <div
-                ref={leftPanelRef}
-                className="flex-1 overflow-auto rounded-lg border bg-card"
-              >
+              <div ref={leftPanelRef} className="flex-1 overflow-auto rounded-lg border bg-card">
                 {leftVariant.screenshot_url ? (
                   <div className="relative w-full">
                     <Image
@@ -268,10 +250,7 @@ export default function CompareVariantsPage() {
         {/* Right Panel */}
         <div className="flex flex-col min-h-0">
           <div className="flex-shrink-0 mb-3">
-            <Select
-              value={selectedVariants[1]}
-              onValueChange={handleRightVariantChange}
-            >
+            <Select value={selectedVariants[1]} onValueChange={handleRightVariantChange}>
               <SelectTrigger>
                 <SelectValue placeholder="Select variant" />
               </SelectTrigger>
@@ -289,9 +268,7 @@ export default function CompareVariantsPage() {
             <>
               <div className="flex-shrink-0 mb-3 flex items-center justify-between">
                 <div>
-                  <span className="text-2xl font-semibold">
-                    {getConversionRate(rightVariant)}
-                  </span>
+                  <span className="text-2xl font-semibold">{getConversionRate(rightVariant)}</span>
                   <span className="ml-2 text-sm text-muted-foreground">
                     ({rightVariant.conversions}/{rightVariant.impressions})
                   </span>
@@ -307,10 +284,7 @@ export default function CompareVariantsPage() {
                 )}
               </div>
 
-              <div
-                ref={rightPanelRef}
-                className="flex-1 overflow-auto rounded-lg border bg-card"
-              >
+              <div ref={rightPanelRef} className="flex-1 overflow-auto rounded-lg border bg-card">
                 {rightVariant.screenshot_url ? (
                   <div className="relative w-full">
                     <Image
@@ -341,15 +315,10 @@ function VariantDetails({ variant }: { variant: Variant }) {
       <p className="text-sm font-medium mb-2">{variant.description}</p>
       {variant.patches.length > 0 && (
         <div className="mt-4">
-          <p className="text-xs font-medium text-muted-foreground uppercase mb-2">
-            DOM Patches
-          </p>
+          <p className="text-xs font-medium text-muted-foreground uppercase mb-2">DOM Patches</p>
           <div className="space-y-2">
             {variant.patches.map((patch, i) => (
-              <div
-                key={`patch-${i}`}
-                className="rounded bg-muted p-2 text-xs font-mono"
-              >
+              <div key={`patch-${i}`} className="rounded bg-muted p-2 text-xs font-mono">
                 <span className="text-primary">{patch.action}</span>
                 <span className="text-muted-foreground"> @ </span>
                 <span>{patch.selector}</span>

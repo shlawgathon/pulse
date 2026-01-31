@@ -11,7 +11,11 @@
       "Bash(bun remove:*)",
       "Bash(bun run build)",
       "Bash(bun install)",
-      "Bash(bun install:*)"
+      "Bash(bun install:*)",
+      "WebFetch(domain:ui.shadcn.com)",
+      "Bash(bun add:*)",
+      "Bash(bunx shadcn@latest add dropdown-menu:*)",
+      "Bash(bun run lint)"
     ]
   }
 }

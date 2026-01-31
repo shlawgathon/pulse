@@ -9,22 +9,8 @@ import { api } from "@/lib/api-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { ErrorAlert } from "@/components/error-alert";
 import { ButtonLoading } from "@/components/loading-spinner";
 import type { Site, Experiment } from "@/types";
@@ -36,7 +22,7 @@ const experimentSchema = z.object({
   target_url: z.string().url("Please enter a valid URL"),
   url_pattern: z.string().optional(),
   optimization_goal: z.string().optional(),
-  num_variants: z.number().min(1).max(4),
+  num_variants: z.number().min(1).max(4)
 });
 
 type ExperimentFormData = z.infer<typeof experimentSchema>;
@@ -53,21 +39,20 @@ export default function NewExperimentPage() {
       target_url: "",
       url_pattern: "",
       optimization_goal: "",
-      num_variants: 2,
-    },
+      num_variants: 2
+    }
   });
 
   const { data: sites, isLoading: sitesLoading } = useQuery({
     queryKey: ["sites"],
-    queryFn: () => api.get<Site[]>("/api/v1/sites"),
+    queryFn: () => api.get<Site[]>("/api/v1/sites")
   });
 
   const createExperiment = useMutation({
-    mutationFn: (data: ExperimentFormData) =>
-      api.post<Experiment>("/api/v1/experiments", data),
+    mutationFn: (data: ExperimentFormData) => api.post<Experiment>("/api/v1/experiments", data),
     onSuccess: (experiment) => {
       router.push(`/experiments/${experiment.id}`);
-    },
+    }
   });
 
   const onSubmit = (data: ExperimentFormData) => {
@@ -77,12 +62,8 @@ export default function NewExperimentPage() {
   return (
     <div className="max-w-2xl mx-auto">
       <div className="mb-8">
-        <h1 className="text-2xl font-semibold text-foreground">
-          Create Experiment
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Set up a new A/B test to optimize your UX
-        </p>
+        <h1 className="text-2xl font-semibold text-foreground">Create Experiment</h1>
+        <p className="mt-1 text-sm text-muted-foreground">Set up a new A/B test to optimize your UX</p>
       </div>
 
       <Form {...form}>
@@ -93,11 +74,7 @@ export default function NewExperimentPage() {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Site</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                  disabled={sitesLoading}
-                >
+                <Select onValueChange={field.onChange} defaultValue={field.value} disabled={sitesLoading}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Select a site" />
@@ -123,10 +100,7 @@ export default function NewExperimentPage() {
               <FormItem>
                 <FormLabel>Experiment Name</FormLabel>
                 <FormControl>
-                  <Input
-                    placeholder="e.g., Homepage CTA Optimization"
-                    {...field}
-                  />
+                  <Input placeholder="e.g., Homepage CTA Optimization" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -140,11 +114,7 @@ export default function NewExperimentPage() {
               <FormItem>
                 <FormLabel>Description</FormLabel>
                 <FormControl>
-                  <Textarea
-                    rows={3}
-                    placeholder="What are you trying to improve?"
-                    {...field}
-                  />
+                  <Textarea rows={3} placeholder="What are you trying to improve?" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -158,15 +128,9 @@ export default function NewExperimentPage() {
               <FormItem>
                 <FormLabel>Target URL</FormLabel>
                 <FormControl>
-                  <Input
-                    type="url"
-                    placeholder="https://example.com/page-to-optimize"
-                    {...field}
-                  />
+                  <Input type="url" placeholder="https://example.com/page-to-optimize" {...field} />
                 </FormControl>
-                <FormDescription>
-                  The page where you want to run the experiment
-                </FormDescription>
+                <FormDescription>The page where you want to run the experiment</FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -181,10 +145,7 @@ export default function NewExperimentPage() {
                 <FormControl>
                   <Input placeholder="e.g., /products/* or /blog/**" {...field} />
                 </FormControl>
-                <FormDescription>
-                  Match multiple pages with wildcards. Leave empty for exact URL
-                  match.
-                </FormDescription>
+                <FormDescription>Match multiple pages with wildcards. Leave empty for exact URL match.</FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -197,14 +158,9 @@ export default function NewExperimentPage() {
               <FormItem>
                 <FormLabel>Optimization Goal</FormLabel>
                 <FormControl>
-                  <Input
-                    placeholder="e.g., Increase sign-ups, Improve click-through rate"
-                    {...field}
-                  />
+                  <Input placeholder="e.g., Increase sign-ups, Improve click-through rate" {...field} />
                 </FormControl>
-                <FormDescription>
-                  Tell the AI what you want to optimize for
-                </FormDescription>
+                <FormDescription>Tell the AI what you want to optimize for</FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -232,38 +188,20 @@ export default function NewExperimentPage() {
                     <SelectItem value="4">4 variants</SelectItem>
                   </SelectContent>
                 </Select>
-                <FormDescription>
-                  AI will generate this many variant suggestions (plus the
-                  control)
-                </FormDescription>
+                <FormDescription>AI will generate this many variant suggestions (plus the control)</FormDescription>
                 <FormMessage />
               </FormItem>
             )}
           />
 
-          <ErrorAlert
-            error={createExperiment.error}
-            fallbackMessage="Failed to create experiment"
-          />
+          <ErrorAlert error={createExperiment.error} fallbackMessage="Failed to create experiment" />
 
           <div className="flex gap-3 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => router.back()}
-              className="flex-1"
-            >
+            <Button type="button" variant="outline" onClick={() => router.back()} className="flex-1">
               Cancel
             </Button>
-            <Button
-              type="submit"
-              disabled={createExperiment.isPending}
-              className="flex-1"
-            >
-              <ButtonLoading
-                loading={createExperiment.isPending}
-                loadingText="Creating..."
-              >
+            <Button type="submit" disabled={createExperiment.isPending} className="flex-1">
+              <ButtonLoading loading={createExperiment.isPending} loadingText="Creating...">
                 Create Experiment
               </ButtonLoading>
             </Button>

@@ -9,39 +9,28 @@ import { useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  ChevronDown,
-  FlaskConical,
-  Globe,
-  Settings,
-  Mail,
-  LogOut,
-} from "lucide-react";
+import { ChevronDown, FlaskConical, Globe, Settings, Mail, LogOut } from "lucide-react";
 import { clearTokens } from "@/lib/api-client";
 
 const navItems = [
   {
     title: "Experiments",
     icon: FlaskConical,
-    href: "/experiments",
+    href: "/experiments"
   },
   {
     title: "Sites",
     icon: Globe,
-    href: "/sites",
+    href: "/sites"
   },
   {
     title: "Settings",
     icon: Settings,
-    href: "/settings",
-  },
+    href: "/settings"
+  }
 ];
 
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
 

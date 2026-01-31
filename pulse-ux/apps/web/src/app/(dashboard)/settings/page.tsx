@@ -11,15 +11,7 @@ import { User, Building, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ButtonLoading } from "@/components/loading-spinner";
 
@@ -30,7 +22,7 @@ const settingsSchema = z
     organization_name: z.string().optional(),
     current_password: z.string().optional(),
     new_password: z.string().optional(),
-    confirm_password: z.string().optional(),
+    confirm_password: z.string().optional()
   })
   .refine(
     (data) => {
@@ -41,7 +33,7 @@ const settingsSchema = z
     },
     {
       message: "Passwords do not match",
-      path: ["confirm_password"],
+      path: ["confirm_password"]
     }
   )
   .refine(
@@ -53,7 +45,7 @@ const settingsSchema = z
     },
     {
       message: "Current password is required to set a new password",
-      path: ["current_password"],
+      path: ["current_password"]
     }
   );
 
@@ -68,8 +60,8 @@ export default function SettingsPage() {
       organization_name: "My Organization",
       current_password: "",
       new_password: "",
-      confirm_password: "",
-    },
+      confirm_password: ""
+    }
   });
 
   const onSubmit = async (data: SettingsFormData) => {
@@ -208,15 +200,8 @@ export default function SettingsPage() {
           </Card>
 
           {/* Save Button */}
-          <Button
-            type="submit"
-            disabled={form.formState.isSubmitting}
-            className="cta-button"
-          >
-            <ButtonLoading
-              loading={form.formState.isSubmitting}
-              loadingText="SAVING..."
-            >
+          <Button type="submit" disabled={form.formState.isSubmitting} className="cta-button">
+            <ButtonLoading loading={form.formState.isSubmitting} loadingText="SAVING...">
               SAVE CHANGES
             </ButtonLoading>
           </Button>

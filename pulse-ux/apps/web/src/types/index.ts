@@ -40,13 +40,7 @@ export interface SiteCreate {
 }
 
 // Experiment types
-export type ExperimentStatus =
-  | "draft"
-  | "pending"
-  | "active"
-  | "paused"
-  | "completed"
-  | "archived";
+export type ExperimentStatus = "draft" | "pending" | "active" | "paused" | "completed" | "archived";
 
 export interface Experiment {
   id: string;
@@ -75,15 +69,7 @@ export interface ExperimentCreate {
 }
 
 // Variant types
-export type PatchAction =
-  | "style"
-  | "class_add"
-  | "class_remove"
-  | "attribute"
-  | "text"
-  | "html"
-  | "hide"
-  | "show";
+export type PatchAction = "style" | "class_add" | "class_remove" | "attribute" | "text" | "html" | "hide" | "show";
 
 export interface DOMPatch {
   action: PatchAction;

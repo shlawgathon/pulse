@@ -5,11 +5,7 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
-export default function MarketingLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function MarketingLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="dark min-h-screen bg-black text-white">
       {/* Navigation Header */}
@@ -25,32 +21,20 @@ export default function MarketingLayout({
 
           {/* Navigation Links */}
           <div className="hidden md:flex items-center gap-8">
-            <Link
-              href="#features"
-              className="text-sm text-white/70 hover:text-white transition-colors"
-            >
+            <Link href="#features" className="text-sm text-white/70 hover:text-white transition-colors">
               Features
             </Link>
-            <Link
-              href="#how-it-works"
-              className="text-sm text-white/70 hover:text-white transition-colors"
-            >
+            <Link href="#how-it-works" className="text-sm text-white/70 hover:text-white transition-colors">
               How It Works
             </Link>
-            <Link
-              href="#pricing"
-              className="text-sm text-white/70 hover:text-white transition-colors"
-            >
+            <Link href="#pricing" className="text-sm text-white/70 hover:text-white transition-colors">
               Pricing
             </Link>
           </div>
 
           {/* Auth Buttons */}
           <div className="flex items-center gap-4">
-            <Link
-              href="/login"
-              className="text-sm text-white/70 hover:text-white transition-colors"
-            >
+            <Link href="/login" className="text-sm text-white/70 hover:text-white transition-colors">
               Log In
             </Link>
             <Link
@@ -79,9 +63,7 @@ export default function MarketingLayout({
                 </div>
                 <span className="font-semibold text-lg">Pulse</span>
               </div>
-              <p className="text-sm text-white/50">
-                AI-powered UX optimization for modern teams.
-              </p>
+              <p className="text-sm text-white/50">AI-powered UX optimization for modern teams.</p>
             </div>
 
             {/* Product */}
@@ -147,8 +129,7 @@ export default function MarketingLayout({
           </div>
 
           <div className="mt-12 pt-8 border-t border-white/10 text-center text-sm text-white/30">
-            &copy; {new Date().getFullYear()} Pulse UX Optimizer. All rights
-            reserved.
+            &copy; {new Date().getFullYear()} Pulse UX Optimizer. All rights reserved.
           </div>
         </div>
       </footer>

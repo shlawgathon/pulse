@@ -41,7 +41,7 @@ export function getTokens(): {
   }
   return {
     accessToken: localStorage.getItem(ACCESS_TOKEN_KEY),
-    refreshToken: localStorage.getItem(REFRESH_TOKEN_KEY),
+    refreshToken: localStorage.getItem(REFRESH_TOKEN_KEY)
   };
 }
 
@@ -92,9 +92,9 @@ async function refreshAccessToken(): Promise<string | null> {
     const response = await fetch(`${API_URL}/api/v1/auth/refresh`, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
+        "Content-Type": "application/json"
       },
-      body: JSON.stringify({ refresh_token: refreshToken }),
+      body: JSON.stringify({ refresh_token: refreshToken })
     });
 
     if (!response.ok) {
@@ -114,36 +114,31 @@ async function refreshAccessToken(): Promise<string | null> {
 /**
  * Make an authenticated API request.
  */
-export async function apiRequest<T>(
-  endpoint: string,
-  options: RequestInit = {}
-): Promise<T> {
+export async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const { accessToken } = getTokens();
 
   const headers: HeadersInit = {
     "Content-Type": "application/json",
-    ...options.headers,
+    ...options.headers
   };
 
   if (accessToken) {
-    (headers as Record<string, string>)["Authorization"] =
-      `Bearer ${accessToken}`;
+    (headers as Record<string, string>)["Authorization"] = `Bearer ${accessToken}`;
   }
 
   let response = await fetch(`${API_URL}${endpoint}`, {
     ...options,
-    headers,
+    headers
   });
 
   // If unauthorized, try to refresh the token
   if (response.status === 401 && accessToken) {
     const newToken = await refreshAccessToken();
     if (newToken) {
-      (headers as Record<string, string>)["Authorization"] =
-        `Bearer ${newToken}`;
+      (headers as Record<string, string>)["Authorization"] = `Bearer ${newToken}`;
       response = await fetch(`${API_URL}${endpoint}`, {
         ...options,
-        headers,
+        headers
       });
     }
   }
@@ -177,15 +172,14 @@ export const api = {
   post: <T>(endpoint: string, data?: unknown) =>
     apiRequest<T>(endpoint, {
       method: "POST",
-      body: data ? JSON.stringify(data) : undefined,
+      body: data ? JSON.stringify(data) : undefined
     }),
 
   patch: <T>(endpoint: string, data?: unknown) =>
     apiRequest<T>(endpoint, {
       method: "PATCH",
-      body: data ? JSON.stringify(data) : undefined,
+      body: data ? JSON.stringify(data) : undefined
     }),
 
-  delete: <T>(endpoint: string) =>
-    apiRequest<T>(endpoint, { method: "DELETE" }),
+  delete: <T>(endpoint: string) => apiRequest<T>(endpoint, { method: "DELETE" })
 };

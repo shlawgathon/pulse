@@ -6,31 +6,28 @@ import { Toaster } from "sonner";
 
 const fontSans = Inter({
   subsets: ["latin"],
-  variable: "--font-sans",
+  variable: "--font-sans"
 });
 
 const fontMono = JetBrains_Mono({
   subsets: ["latin"],
-  variable: "--font-mono",
+  variable: "--font-mono"
 });
 
 export const metadata: Metadata = {
   title: "Pulse UX Optimizer",
-  description:
-    "AI-powered UX optimization platform with automated A/B testing",
-  keywords: ["UX", "A/B testing", "optimization", "AI", "conversion"],
+  description: "AI-powered UX optimization platform with automated A/B testing",
+  keywords: ["UX", "A/B testing", "optimization", "AI", "conversion"]
 };
 
 export default function RootLayout({
-  children,
+  children
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body
-        className={`${fontSans.variable} ${fontMono.variable} font-sans antialiased`}
-      >
+      <body className={`${fontSans.variable} ${fontMono.variable} font-sans antialiased`}>
         <Providers>{children}</Providers>
         <Toaster richColors position="top-right" />
       </body>

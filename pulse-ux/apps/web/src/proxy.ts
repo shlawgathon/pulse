@@ -2,14 +2,14 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 /**
- * Middleware for authentication checks.
+ * Proxy for authentication checks.
  * Protects dashboard routes and redirects unauthenticated users to login.
  */
 
 const PUBLIC_PATHS = ["/", "/login", "/register"];
 const AUTH_COOKIE_NAME = "pulse_authenticated";
 
-export function middleware(request: NextRequest) {
+export default function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Allow public paths
@@ -18,11 +18,7 @@ export function middleware(request: NextRequest) {
   }
 
   // Allow static files and API routes
-  if (
-    pathname.startsWith("/_next") ||
-    pathname.startsWith("/api") ||
-    pathname.includes(".")
-  ) {
+  if (pathname.startsWith("/_next") || pathname.startsWith("/api") || pathname.includes(".")) {
     return NextResponse.next();
   }
 
@@ -46,6 +42,6 @@ export const config = {
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      */
-    "/((?!_next/static|_next/image|favicon.ico).*)",
-  ],
+    "/((?!_next/static|_next/image|favicon.ico).*)"
+  ]
 };

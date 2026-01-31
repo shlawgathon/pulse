@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm view:*)",
+      "Bash(dir /b /s \"C:\\\\Users\\\\aritr\\\\Desktop\\\\GitHub Projects\\\\pulse\\\\pulse-ux\\\\apps\\\\web\\\\src\\\\app\")",
+      "Bash(findstr:*)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\aritr\\\\Desktop\\\\GitHub Projects\\\\pulse\\\\pulse-ux\\\\apps\\\\web\\\\src\\\\app\" -Recurse -Filter \"*.tsx\")",
+      "Bash(Where-Object { $_Directory.Name -match '\\\\[' })",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(bun run lint:*)",
+      "Bash(npx @next/codemod@latest next-lint-to-eslint-cli .)",
+      "Bash(npx @next/codemod@latest next-lint-to-eslint-cli:*)",
+      "Bash(bun run build)"
+    ]
+  }
+}
