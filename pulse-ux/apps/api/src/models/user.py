@@ -32,10 +32,12 @@ class User(Document):
     """
 
     email: Indexed(EmailStr, unique=True)
-    password_hash: str = Field(...)
+    password_hash: Optional[str] = Field(default=None)
     name: str = Field(..., min_length=1, max_length=100)
     avatar_url: Optional[str] = Field(default=None)
     organization_name: Optional[str] = Field(default=None, max_length=100)
+    auth_provider: str = Field(default="email")
+    auth_provider_id: Optional[str] = Field(default=None)
     is_active: bool = Field(default=True)
     is_verified: bool = Field(default=False)
     created_at: datetime = Field(default_factory=datetime.utcnow)
