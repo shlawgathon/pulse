@@ -60,6 +60,10 @@ class Settings(BaseSettings):
     FIRECRAWL_API_KEY: str = ""
     OPENROUTER_API_KEY: str = ""
     RESEND_API_KEY: str = ""
+    
+    # Daytona (Live Preview)
+    DAYTONA_API_KEY: str = ""
+    DAYTONA_API_URL: str = "https://app.daytona.io/api"
 
     # CORS
     CORS_ORIGINS: str = "http://localhost:3000"
