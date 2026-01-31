@@ -63,6 +63,8 @@ class LLMService:
         target_url: str,
         optimization_goal: str | None = None,
         num_variants: int = 2,
+        screenshot_url: str | None = None,
+        css: str | None = None,
     ) -> VariantGenerationResponse:
         """
         Generate UX improvement variants from HTML.
@@ -72,6 +74,8 @@ class LLMService:
             target_url: URL of the page being optimized
             optimization_goal: What to optimize for (e.g., "increase signups")
             num_variants: Number of variants to generate
+            screenshot_url: Optional URL of a screenshot for vision-based analysis
+            css: Optional CSS content for styling context
 
         Returns:
             VariantGenerationResponse with generated variants
@@ -79,15 +83,40 @@ class LLMService:
         goal = optimization_goal or "improve conversions and user engagement"
 
         # Truncate HTML if too long
-        max_html_length = 50000
+        max_html_length = 40000
         if len(html) > max_html_length:
             html = html[:max_html_length] + "\n<!-- HTML truncated -->"
 
-        prompt = f"""Analyze this webpage and generate {num_variants} UX improvement variants.
+        # Truncate CSS if too long
+        css_section = ""
+        if css:
+            max_css_length = 15000
+            if len(css) > max_css_length:
+                css = css[:max_css_length] + "\n/* CSS truncated */"
+            css_section = f"""
+CSS Stylesheets (IMPORTANT - understand the site's theme from this):
+```css
+{css}
+```
 
+NOTE: This site uses a DARK THEME. Pay attention to the color scheme, background colors (likely dark grays/blacks),
+and text colors (likely light/white). Any styling changes MUST maintain this dark theme aesthetic.
+"""
+
+        # Add vision context to prompt if screenshot is available
+        vision_note = ""
+        if screenshot_url:
+            vision_note = """
+IMPORTANT: I'm providing you with a screenshot of the actual page. Use this visual context
+to understand the current design, layout, colors, and visual hierarchy. Make your suggestions
+based on what you SEE in the screenshot, not just the HTML structure.
+"""
+
+        prompt = f"""Analyze this webpage and generate {num_variants} UX improvement variants.
+{vision_note}
 URL: {target_url}
 Optimization Goal: {goal}
-
+{css_section}
 HTML Content:
 ```html
 {html}
@@ -99,6 +128,7 @@ Generate variants that:
 3. Focus on high-impact changes (CTAs, headlines, forms, trust signals)
 4. Are different from each other (don't just vary colors)
 5. Keep each variant focused: 3-5 patches maximum per variant
+6. NEVER hide or delete interactive components (dropdowns, accordions, toggles, menus, collapsible sections)
 
 Available patch actions:
 - style: Modify CSS properties (requires property_name)
@@ -106,9 +136,17 @@ Available patch actions:
 - class_remove: Remove CSS classes
 - attribute: Set/modify HTML attributes (requires property_name)
 - text: Change text content
-- html: Replace innerHTML (use sparingly)
-- hide: Hide element (display: none)
+- html: Replace innerHTML (use sparingly, never on interactive elements)
+- hide: Hide element (display: none) - ONLY for non-functional decorative elements, NEVER for buttons/dropdowns/forms
 - show: Show element
+
+IMPORTANT: Do NOT use 'hide' action on:
+- Dropdown menus or select elements
+- Accordions or collapsible panels
+- Toggle switches or checkboxes
+- Form inputs or buttons
+- Navigation menus
+Only hide purely decorative elements that don't affect functionality.
 
 For each variant, provide:
 - A descriptive name (e.g., "Bold CTA with Urgency")
@@ -123,6 +161,7 @@ Generate {num_variants} distinct variants plus a brief (2-3 sentence) analysis."
             response_model=VariantGenerationResponse,
             temperature=0.7,
             max_tokens=8192,
+            image_url=screenshot_url,
         )
 
         return response

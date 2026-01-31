@@ -25,6 +25,8 @@ async def generate_variants_for_experiment(
     target_url: str,
     optimization_goal: str | None = None,
     num_variants: int = 2,
+    screenshot_url: str | None = None,
+    css: str | None = None,
 ) -> list[str]:
     """
     Generate variants for an experiment using LLM.
@@ -35,6 +37,8 @@ async def generate_variants_for_experiment(
         target_url: URL being optimized
         optimization_goal: Optimization goal
         num_variants: Number of variants to generate
+        screenshot_url: Optional URL of a screenshot for vision-based analysis
+        css: Optional CSS content for styling context
 
     Returns:
         List of created variant IDs
@@ -42,13 +46,17 @@ async def generate_variants_for_experiment(
     logger.info(f"Generating {num_variants} variants for experiment {experiment_id}")
 
     try:
-        # Generate variants via LLM
+        # Generate variants via LLM (with optional vision from screenshot and CSS context)
+        logger.info(f"Calling LLM with screenshot: {bool(screenshot_url)}, CSS: {bool(css)}")
         response = await llm_service.generate_variants(
             html=html,
+            css=css,
             target_url=target_url,
             optimization_goal=optimization_goal,
             num_variants=num_variants,
+            screenshot_url=screenshot_url,
         )
+        logger.info(f"LLM returned {len(response.variants)} variants")
 
         variant_ids = []
 

@@ -233,6 +233,7 @@ export default function CompareVariantsPage() {
                   <VariantPreview
                     baseHtml={comparison.experiment.base_html_snapshot}
                     variant={leftVariant}
+                    targetUrl={comparison.experiment.target_url}
                     className="min-h-[500px]"
                   />
                 ) : leftVariant.screenshot_url ? (
@@ -296,6 +297,7 @@ export default function CompareVariantsPage() {
                   <VariantPreview
                     baseHtml={comparison.experiment.base_html_snapshot}
                     variant={rightVariant}
+                    targetUrl={comparison.experiment.target_url}
                     className="min-h-[500px]"
                   />
                 ) : rightVariant.screenshot_url ? (
