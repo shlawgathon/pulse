@@ -317,6 +317,21 @@ class ExperimentService:
         experiment.winner_variant_id = winner_variant_id
         experiment.updated_at = datetime.utcnow()
         await experiment.save()
+        
+        # Auto-trigger PR generation in background
+        try:
+            from src.services.pr_service import pr_service
+            logger.info(f"Auto-triggering PR generation for experiment {experiment_id}")
+            asyncio.create_task(
+                pr_service.generate_pr(
+                    experiment_id=experiment_id,
+                    variant_id=winner_variant_id,
+                    user_id=user_id,
+                )
+            )
+        except Exception as e:
+            logger.warning(f"Failed to trigger auto PR generation: {e}")
+        
         return experiment
 
     async def get_comparison(
