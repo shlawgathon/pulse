@@ -10,15 +10,7 @@ import { z } from "zod";
 import { api } from "@/lib/api-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { StatusBadge } from "@/components/status-badge";
 import { PageLoading } from "@/components/loading-spinner";
 import { formatDate } from "@/lib/utils";
@@ -28,7 +20,7 @@ const COPY_FEEDBACK_DURATION = 2000;
 
 const githubSchema = z.object({
   github_repo: z.string().optional(),
-  github_pat: z.string().optional(),
+  github_pat: z.string().optional()
 });
 
 type GitHubFormData = z.infer<typeof githubSchema>;
@@ -55,21 +47,20 @@ export default function SiteDetailPage() {
   // Fetch site and experiments in parallel
   const { data: site, isLoading: siteLoading } = useQuery({
     queryKey: ["site", siteId],
-    queryFn: () => api.get<Site>(`/api/v1/sites/${siteId}`),
+    queryFn: () => api.get<Site>(`/api/v1/sites/${siteId}`)
   });
 
   const { data: experiments, isLoading: experimentsLoading } = useQuery({
     queryKey: ["site-experiments", siteId],
-    queryFn: () =>
-      api.get<Experiment[]>(`/api/v1/experiments?site_id=${siteId}`),
+    queryFn: () => api.get<Experiment[]>(`/api/v1/experiments?site_id=${siteId}`)
   });
 
   const form = useForm<GitHubFormData>({
     resolver: zodResolver(githubSchema),
     defaultValues: {
       github_repo: "",
-      github_pat: "",
-    },
+      github_pat: ""
+    }
   });
 
   // Update form when site data loads
@@ -83,20 +74,20 @@ export default function SiteDetailPage() {
     mutationFn: (data: GitHubFormData) =>
       api.patch<Site>(`/api/v1/sites/${siteId}`, {
         github_repo: data.github_repo || undefined,
-        github_pat: data.github_pat || undefined,
+        github_pat: data.github_pat || undefined
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["site", siteId] });
       setShowGitHubForm(false);
       form.reset();
-    },
+    }
   });
 
   const deleteSite = useMutation({
     mutationFn: () => api.delete(`/api/v1/sites/${siteId}`),
     onSuccess: () => {
       router.push("/sites");
-    },
+    }
   });
 
   const copyToClipboard = useCallback(async (text: string) => {
@@ -106,10 +97,7 @@ export default function SiteDetailPage() {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
-    timeoutRef.current = setTimeout(
-      () => setCopied(false),
-      COPY_FEEDBACK_DURATION
-    );
+    timeoutRef.current = setTimeout(() => setCopied(false), COPY_FEEDBACK_DURATION);
   }, []);
 
   const handleDelete = useCallback(() => {
@@ -138,10 +126,7 @@ export default function SiteDetailPage() {
   );
 
   // Memoized computed values
-  const activeExperiments = useMemo(
-    () => experiments?.filter((e) => e.status === "active").length || 0,
-    [experiments]
-  );
+  const activeExperiments = useMemo(() => experiments?.filter((e) => e.status === "active").length || 0, [experiments]);
 
   const isLoading = siteLoading || experimentsLoading;
 
@@ -182,18 +167,12 @@ export default function SiteDetailPage() {
           <p className="mt-1 text-sm font-medium">
             {site.is_active ? (
               <span className="inline-flex items-center text-green-600">
-                <span
-                  className="mr-1.5 h-2 w-2 rounded-full bg-green-500"
-                  aria-hidden="true"
-                />
+                <span className="mr-1.5 h-2 w-2 rounded-full bg-green-500" aria-hidden="true" />
                 Active
               </span>
             ) : (
               <span className="inline-flex items-center text-muted-foreground">
-                <span
-                  className="mr-1.5 h-2 w-2 rounded-full bg-muted-foreground"
-                  aria-hidden="true"
-                />
+                <span className="mr-1.5 h-2 w-2 rounded-full bg-muted-foreground" aria-hidden="true" />
                 Inactive
               </span>
             )}
@@ -205,9 +184,7 @@ export default function SiteDetailPage() {
         </div>
         <div className="rounded-lg border bg-card p-4">
           <p className="text-sm text-muted-foreground">Created</p>
-          <p className="mt-1 text-sm font-medium">
-            {formatDate(site.created_at)}
-          </p>
+          <p className="mt-1 text-sm font-medium">{formatDate(site.created_at)}</p>
         </div>
       </div>
 
@@ -216,10 +193,8 @@ export default function SiteDetailPage() {
         <h2 className="text-lg font-medium mb-4">Install Script</h2>
         <p className="text-sm text-muted-foreground mb-4">
           Add this script tag to your website&apos;s{" "}
-          <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">
-            &lt;head&gt;
-          </code>{" "}
-          section to enable A/B testing.
+          <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">&lt;head&gt;</code> section to enable A/B
+          testing.
         </p>
 
         <div className="relative">
@@ -239,8 +214,7 @@ export default function SiteDetailPage() {
 
         <div className="mt-4 rounded-lg bg-primary/5 border border-primary/20 p-4">
           <p className="text-sm text-primary">
-            <strong>Public Key:</strong>{" "}
-            <code className="font-mono">{site.public_key}</code>
+            <strong>Public Key:</strong> <code className="font-mono">{site.public_key}</code>
           </p>
         </div>
       </div>
@@ -251,8 +225,7 @@ export default function SiteDetailPage() {
           <div>
             <h2 className="text-lg font-medium">GitHub Integration</h2>
             <p className="text-sm text-muted-foreground">
-              Connect your repository to generate Pull Requests for winning
-              variants.
+              Connect your repository to generate Pull Requests for winning variants.
             </p>
           </div>
           {!showGitHubForm && (
@@ -264,12 +237,7 @@ export default function SiteDetailPage() {
 
         {site.github_repo && !showGitHubForm && (
           <div className="flex items-center gap-2 rounded-lg bg-muted p-4">
-            <svg
-              className="h-5 w-5"
-              fill="currentColor"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
+            <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path
                 fillRule="evenodd"
                 d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"
@@ -285,10 +253,7 @@ export default function SiteDetailPage() {
 
         {showGitHubForm && (
           <Form {...form}>
-            <form
-              onSubmit={form.handleSubmit(onGitHubSubmit)}
-              className="space-y-4"
-            >
+            <form onSubmit={form.handleSubmit(onGitHubSubmit)} className="space-y-4">
               <FormField
                 control={form.control}
                 name="github_repo"
@@ -298,9 +263,7 @@ export default function SiteDetailPage() {
                     <FormControl>
                       <Input placeholder="owner/repository" {...field} />
                     </FormControl>
-                    <FormDescription>
-                      Format: owner/repository (e.g., acme/website)
-                    </FormDescription>
+                    <FormDescription>Format: owner/repository (e.g., acme/website)</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -313,34 +276,19 @@ export default function SiteDetailPage() {
                   <FormItem>
                     <FormLabel>Personal Access Token</FormLabel>
                     <FormControl>
-                      <Input
-                        type="password"
-                        placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
-                        {...field}
-                      />
+                      <Input type="password" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" {...field} />
                     </FormControl>
-                    <FormDescription>
-                      Needs repo scope. Leave blank to keep existing token.
-                    </FormDescription>
+                    <FormDescription>Needs repo scope. Leave blank to keep existing token.</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
               <div className="flex gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleCloseGitHubForm}
-                  className="flex-1"
-                >
+                <Button type="button" variant="outline" onClick={handleCloseGitHubForm} className="flex-1">
                   Cancel
                 </Button>
-                <Button
-                  type="submit"
-                  disabled={updateSite.isPending}
-                  className="flex-1"
-                >
+                <Button type="submit" disabled={updateSite.isPending} className="flex-1">
                   {updateSite.isPending ? "Saving..." : "Save"}
                 </Button>
               </div>
@@ -362,9 +310,7 @@ export default function SiteDetailPage() {
                 clipRule="evenodd"
               />
             </svg>
-            <p className="mt-2 text-sm text-muted-foreground">
-              No GitHub repository connected
-            </p>
+            <p className="mt-2 text-sm text-muted-foreground">No GitHub repository connected</p>
             <p className="text-xs text-muted-foreground/70">
               Connect to automatically generate PRs for winning variants
             </p>
@@ -386,9 +332,7 @@ export default function SiteDetailPage() {
               >
                 <div>
                   <p className="font-medium">{experiment.name}</p>
-                  <p className="text-sm text-muted-foreground truncate max-w-md">
-                    {experiment.target_url}
-                  </p>
+                  <p className="text-sm text-muted-foreground truncate max-w-md">{experiment.target_url}</p>
                 </div>
                 <StatusBadge status={experiment.status} />
               </Link>
@@ -397,10 +341,7 @@ export default function SiteDetailPage() {
         ) : (
           <div className="text-center py-8">
             <p className="text-muted-foreground">No experiments yet</p>
-            <Link
-              href="/experiments/new"
-              className="mt-2 inline-block text-sm text-primary hover:underline"
-            >
+            <Link href="/experiments/new" className="mt-2 inline-block text-sm text-primary hover:underline">
               Create your first experiment
             </Link>
           </div>

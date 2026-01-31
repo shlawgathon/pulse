@@ -15,20 +15,13 @@ import { toast } from "sonner";
 import { api, setTokens } from "@/lib/api-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { ButtonLoading } from "@/components/loading-spinner";
 import type { AuthResponse } from "@/types";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
-  password: z.string().min(1, "Password is required"),
+  password: z.string().min(1, "Password is required")
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
@@ -64,15 +57,15 @@ function LoginForm() {
     resolver: zodResolver(loginSchema),
     defaultValues: {
       email: "",
-      password: "",
-    },
+      password: ""
+    }
   });
 
   const onSubmit = async (data: LoginFormData) => {
     try {
       const response = await api.post<AuthResponse>("/api/v1/auth/login", {
         email: data.email,
-        password: data.password,
+        password: data.password
       });
 
       setTokens(response.access_token, response.refresh_token);
@@ -82,9 +75,7 @@ function LoginForm() {
       const from = searchParams.get("from") || "/experiments";
       router.push(from);
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Invalid email or password"
-      );
+      toast.error(error instanceof Error ? error.message : "Invalid email or password");
     }
   };
 
@@ -95,9 +86,7 @@ function LoginForm() {
   return (
     <div className="bg-white/5 rounded-lg border border-white/10 p-8">
       <h1 className="text-2xl font-bold text-center mb-2">Welcome back</h1>
-      <p className="text-white/60 text-center mb-8">
-        Sign in to your Pulse account
-      </p>
+      <p className="text-white/60 text-center mb-8">Sign in to your Pulse account</p>
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -159,10 +148,7 @@ function LoginForm() {
             disabled={form.formState.isSubmitting}
             className="cta-button w-full bg-primary text-primary-foreground py-3 hover:bg-primary/90"
           >
-            <ButtonLoading
-              loading={form.formState.isSubmitting}
-              loadingText="SIGNING IN..."
-            >
+            <ButtonLoading loading={form.formState.isSubmitting} loadingText="SIGNING IN...">
               SIGN IN
             </ButtonLoading>
           </Button>

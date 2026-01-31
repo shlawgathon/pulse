@@ -75,17 +75,12 @@ function SiteCard({ site }: { site: Site }) {
             )}
           </button>
         </div>
-        <code className="text-xs text-muted-foreground break-all">
-          {site.script_tag}
-        </code>
+        <code className="text-xs text-muted-foreground break-all">{site.script_tag}</code>
       </div>
 
       <div className="flex justify-between items-center text-xs text-muted-foreground">
         <span>Added {formatDate(site.created_at)}</span>
-        <Link
-          href={`/sites/${site.id}`}
-          className="text-primary hover:underline"
-        >
+        <Link href={`/sites/${site.id}`} className="text-primary hover:underline">
           View details →
         </Link>
       </div>
@@ -96,7 +91,7 @@ function SiteCard({ site }: { site: Site }) {
 export default function SitesPage() {
   const { data: sites, isLoading } = useQuery({
     queryKey: ["sites"],
-    queryFn: () => api.get<Site[]>("/api/v1/sites"),
+    queryFn: () => api.get<Site[]>("/api/v1/sites")
   });
 
   return (
@@ -114,17 +109,9 @@ export default function SitesPage() {
 
       {/* Content */}
       {isLoading ? (
-        <div
-          className="grid md:grid-cols-2 gap-4"
-          role="status"
-          aria-live="polite"
-          aria-label="Loading sites"
-        >
+        <div className="grid md:grid-cols-2 gap-4" role="status" aria-live="polite" aria-label="Loading sites">
           {[1, 2].map((i) => (
-            <div
-              key={`skeleton-${i}`}
-              className="bg-card rounded-lg border p-4 animate-pulse"
-            >
+            <div key={`skeleton-${i}`} className="bg-card rounded-lg border p-4 animate-pulse">
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-10 h-10 bg-muted rounded-lg" />
                 <div className="space-y-2">
@@ -146,9 +133,7 @@ export default function SitesPage() {
         <div className="bg-card rounded-lg border p-12 text-center">
           <Globe className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
           <h3 className="text-lg font-medium mb-2">No sites yet</h3>
-          <p className="text-muted-foreground mb-6">
-            Add your first site to start running experiments.
-          </p>
+          <p className="text-muted-foreground mb-6">Add your first site to start running experiments.</p>
           <Button asChild className="cta-button">
             <Link href="/sites/new">
               <Plus className="h-4 w-4" />

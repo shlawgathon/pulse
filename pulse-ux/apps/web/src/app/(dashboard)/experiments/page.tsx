@@ -9,13 +9,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Plus, ExternalLink } from "lucide-react";
 import { api } from "@/lib/api-client";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { StatusBadge } from "@/components/status-badge";
 import { formatDate, getHostname } from "@/lib/utils";
 import type { Experiment, Site } from "@/types";
@@ -23,12 +17,7 @@ import type { Experiment, Site } from "@/types";
 // Loading skeleton component
 function LoadingSkeleton() {
   return (
-    <div
-      className="bg-card rounded-lg border p-6"
-      role="status"
-      aria-live="polite"
-      aria-label="Loading experiments"
-    >
+    <div className="bg-card rounded-lg border p-6" role="status" aria-live="polite" aria-label="Loading experiments">
       <div className="flex flex-col items-center justify-center py-12">
         <div className="space-y-3 w-full max-w-sm">
           <div className="h-4 bg-muted rounded animate-pulse w-full" />
@@ -41,12 +30,8 @@ function LoadingSkeleton() {
         </div>
 
         <div className="mt-8 text-center">
-          <h3 className="text-xl font-medium text-muted-foreground">
-            Loading experiments
-          </h3>
-          <p className="text-sm text-muted-foreground mt-2">
-            This should only take a moment.
-          </p>
+          <h3 className="text-xl font-medium text-muted-foreground">Loading experiments</h3>
+          <p className="text-sm text-muted-foreground mt-2">This should only take a moment.</p>
         </div>
       </div>
     </div>
@@ -55,14 +40,8 @@ function LoadingSkeleton() {
 
 // Experiment card component
 function ExperimentCard({ experiment }: { experiment: Experiment }) {
-  const hostname = useMemo(
-    () => getHostname(experiment.target_url),
-    [experiment.target_url]
-  );
-  const createdDate = useMemo(
-    () => formatDate(experiment.created_at),
-    [experiment.created_at]
-  );
+  const hostname = useMemo(() => getHostname(experiment.target_url), [experiment.target_url]);
+  const createdDate = useMemo(() => formatDate(experiment.created_at), [experiment.created_at]);
 
   return (
     <Link
@@ -75,9 +54,7 @@ function ExperimentCard({ experiment }: { experiment: Experiment }) {
       </div>
 
       {experiment.description && (
-        <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-          {experiment.description}
-        </p>
+        <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{experiment.description}</p>
       )}
 
       <div className="flex items-center gap-4 text-xs text-muted-foreground">
@@ -96,24 +73,18 @@ function InfoCards() {
   return (
     <div className="grid md:grid-cols-2 gap-4 mt-6">
       <div className="bg-card rounded-lg border p-4">
-        <h4 className="font-medium text-muted-foreground mb-2">
-          How does Pulse analyze my site?
-        </h4>
+        <h4 className="font-medium text-muted-foreground mb-2">How does Pulse analyze my site?</h4>
         <p className="text-sm text-muted-foreground">
-          Pulse scrapes your site&apos;s DOM and uses Claude Opus 4.5 to
-          generate UX improvements, looking for conversion opportunities and
-          selecting the most impactful changes.
+          Pulse scrapes your site&apos;s DOM and uses Claude Opus 4.5 to generate UX improvements, looking for
+          conversion opportunities and selecting the most impactful changes.
         </p>
       </div>
 
       <div className="bg-card rounded-lg border p-4">
-        <h4 className="font-medium text-muted-foreground mb-2">
-          What types of improvements do you find?
-        </h4>
+        <h4 className="font-medium text-muted-foreground mb-2">What types of improvements do you find?</h4>
         <p className="text-sm text-muted-foreground">
-          We test all kinds of UX changes, from CTA styling to layout
-          adjustments. We focus on the improvements that are most likely to
-          increase conversions.
+          We test all kinds of UX changes, from CTA styling to layout adjustments. We focus on the improvements that are
+          most likely to increase conversions.
         </p>
       </div>
     </div>
@@ -127,7 +98,7 @@ export default function ExperimentsPage() {
   // Fetch sites
   const { data: sites } = useQuery({
     queryKey: ["sites"],
-    queryFn: () => api.get<Site[]>("/api/v1/sites"),
+    queryFn: () => api.get<Site[]>("/api/v1/sites")
   });
 
   // Fetch experiments
@@ -135,14 +106,11 @@ export default function ExperimentsPage() {
     queryKey: ["experiments", selectedSiteId, statusFilter],
     queryFn: () => {
       const params = new URLSearchParams();
-      if (selectedSiteId && selectedSiteId !== "all")
-        params.append("site_id", selectedSiteId);
+      if (selectedSiteId && selectedSiteId !== "all") params.append("site_id", selectedSiteId);
       if (statusFilter !== "all") params.append("status", statusFilter);
       const query = params.toString();
-      return api.get<Experiment[]>(
-        `/api/v1/experiments${query ? `?${query}` : ""}`
-      );
-    },
+      return api.get<Experiment[]>(`/api/v1/experiments${query ? `?${query}` : ""}`);
+    }
   });
 
   return (
@@ -207,9 +175,7 @@ export default function ExperimentsPage() {
       ) : (
         <div className="bg-card rounded-lg border p-12 text-center">
           <h3 className="text-lg font-medium mb-2">No experiments yet</h3>
-          <p className="text-muted-foreground mb-6">
-            Create your first experiment to start optimizing your UX.
-          </p>
+          <p className="text-muted-foreground mb-6">Create your first experiment to start optimizing your UX.</p>
           <Button asChild className="cta-button">
             <Link href="/experiments/new">
               <Plus className="h-4 w-4" />

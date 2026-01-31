@@ -17,7 +17,7 @@ export function formatDate(date: Date | string): string {
   return d.toLocaleDateString("en-US", {
     year: "numeric",
     month: "short",
-    day: "numeric",
+    day: "numeric"
   });
 }
 
@@ -58,10 +58,7 @@ export function getHostname(url: string, fallback = "Unknown"): string {
 /**
  * Calculate conversion rate from impressions and conversions.
  */
-export function calculateConversionRate(
-  conversions: number,
-  impressions: number
-): number {
+export function calculateConversionRate(conversions: number, impressions: number): number {
   if (impressions === 0) return 0;
   return (conversions / impressions) * 100;
 }
@@ -69,10 +66,7 @@ export function calculateConversionRate(
 /**
  * Calculate lift percentage between control and variant.
  */
-export function calculateLift(
-  variantRate: number,
-  controlRate: number
-): number {
+export function calculateLift(variantRate: number, controlRate: number): number {
   if (controlRate === 0) return 0;
   return ((variantRate - controlRate) / controlRate) * 100;
 }
@@ -80,11 +74,7 @@ export function calculateLift(
 /**
  * Format a conversion rate for display.
  */
-export function formatConversionRate(
-  conversions: number,
-  impressions: number,
-  decimals = 1
-): string {
+export function formatConversionRate(conversions: number, impressions: number, decimals = 1): string {
   const rate = calculateConversionRate(conversions, impressions);
   return `${rate.toFixed(decimals)}%`;
 }

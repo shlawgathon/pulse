@@ -18,11 +18,7 @@ export default function proxy(request: NextRequest) {
   }
 
   // Allow static files and API routes
-  if (
-    pathname.startsWith("/_next") ||
-    pathname.startsWith("/api") ||
-    pathname.includes(".")
-  ) {
+  if (pathname.startsWith("/_next") || pathname.startsWith("/api") || pathname.includes(".")) {
     return NextResponse.next();
   }
 
@@ -46,6 +42,6 @@ export const config = {
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      */
-    "/((?!_next/static|_next/image|favicon.ico).*)",
-  ],
+    "/((?!_next/static|_next/image|favicon.ico).*)"
+  ]
 };

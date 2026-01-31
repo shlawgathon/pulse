@@ -15,14 +15,7 @@ import { toast } from "sonner";
 import { api, setTokens } from "@/lib/api-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { ButtonLoading } from "@/components/loading-spinner";
 import type { AuthResponse } from "@/types";
 
@@ -30,7 +23,7 @@ const registerSchema = z.object({
   name: z.string().min(1, "Name is required"),
   email: z.string().email("Please enter a valid email address"),
   password: z.string().min(8, "Password must be at least 8 characters"),
-  organization_name: z.string().optional(),
+  organization_name: z.string().optional()
 });
 
 type RegisterFormData = z.infer<typeof registerSchema>;
@@ -45,8 +38,8 @@ export default function RegisterPage() {
       name: "",
       email: "",
       password: "",
-      organization_name: "",
-    },
+      organization_name: ""
+    }
   });
 
   const onSubmit = async (data: RegisterFormData) => {
@@ -55,16 +48,14 @@ export default function RegisterPage() {
         name: data.name,
         email: data.email,
         password: data.password,
-        organization_name: data.organization_name || undefined,
+        organization_name: data.organization_name || undefined
       });
 
       setTokens(response.access_token, response.refresh_token);
       toast.success("Account created successfully!");
       router.push("/experiments");
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to create account"
-      );
+      toast.error(error instanceof Error ? error.message : "Failed to create account");
     }
   };
 
@@ -75,9 +66,7 @@ export default function RegisterPage() {
   return (
     <div className="bg-white/5 rounded-lg border border-white/10 p-8">
       <h1 className="text-2xl font-bold text-center mb-2">Create an account</h1>
-      <p className="text-white/60 text-center mb-8">
-        Start optimizing your UX today
-      </p>
+      <p className="text-white/60 text-center mb-8">Start optimizing your UX today</p>
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -158,8 +147,7 @@ export default function RegisterPage() {
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-white/80">
-                  Organization{" "}
-                  <span className="text-white/40 font-normal">(optional)</span>
+                  Organization <span className="text-white/40 font-normal">(optional)</span>
                 </FormLabel>
                 <FormControl>
                   <Input
@@ -178,10 +166,7 @@ export default function RegisterPage() {
             disabled={form.formState.isSubmitting}
             className="cta-button w-full bg-primary text-primary-foreground py-3 hover:bg-primary/90"
           >
-            <ButtonLoading
-              loading={form.formState.isSubmitting}
-              loadingText="CREATING ACCOUNT..."
-            >
+            <ButtonLoading loading={form.formState.isSubmitting} loadingText="CREATING ACCOUNT...">
               CREATE ACCOUNT
             </ButtonLoading>
           </Button>
