@@ -27,12 +27,12 @@ async def init_db() -> None:
     # Create Motor client
     _client = AsyncIOMotorClient(settings.DATABASE_URL)
 
-    # Get database name from connection string or use default
-    db_name = _client.get_default_database()
-    if db_name is None:
-        db_name = _client["pulse"]
-    else:
-        db_name = _client.get_default_database()
+    # Get database name from connection string or use default 'pulse'
+    try:
+        db = _client.get_default_database()
+    except Exception:
+        # No default database in connection string, use 'pulse'
+        db = _client["pulse"]
 
     # Import models here to avoid circular imports
     from src.models.user import User, RefreshToken
@@ -44,7 +44,7 @@ async def init_db() -> None:
 
     # Initialize Beanie with all document models
     await init_beanie(
-        database=db_name if db_name else _client["pulse"],
+        database=db,
         document_models=[
             User,
             RefreshToken,

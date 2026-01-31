@@ -11,6 +11,7 @@ from typing import Optional
 
 from beanie import Document, Indexed
 from pydantic import Field
+from pymongo import IndexModel, ASCENDING
 
 
 class ExperimentStatus(str, Enum):
@@ -51,7 +52,7 @@ class Experiment(Document):
     description: Optional[str] = Field(default=None, max_length=2000)
     url_pattern: str = Field(...)
     target_url: str = Field(...)
-    status: Indexed(ExperimentStatus) = Field(default=ExperimentStatus.DRAFT)
+    status: ExperimentStatus = Field(default=ExperimentStatus.DRAFT)
     traffic_allocation: int = Field(default=100, ge=0, le=100)
     created_by: Indexed(str)
     created_at: datetime = Field(default_factory=datetime.utcnow)
@@ -65,5 +66,5 @@ class Experiment(Document):
     class Settings:
         name = "experiments"
         indexes = [
-            [("site_id", 1), ("status", 1)],
+            IndexModel([("site_id", ASCENDING), ("status", ASCENDING)]),
         ]

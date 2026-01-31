@@ -9,6 +9,7 @@ from datetime import datetime
 
 from beanie import Document, Indexed
 from pydantic import Field
+from pymongo import IndexModel, ASCENDING
 
 
 class Assignment(Document):
@@ -51,8 +52,8 @@ class Assignment(Document):
         name = "assignments"
         indexes = [
             # Unique compound index for lookup
-            {"keys": [("experiment_id", 1), ("visitor_id", 1)], "unique": True},
-            "variant_id",
+            IndexModel([("experiment_id", ASCENDING), ("visitor_id", ASCENDING)], unique=True),
+            IndexModel([("variant_id", ASCENDING)]),
             # 90-day TTL for automatic cleanup
-            {"keys": [("last_seen_at", 1)], "expireAfterSeconds": 7776000},
+            IndexModel([("last_seen_at", ASCENDING)], expireAfterSeconds=7776000),
         ]

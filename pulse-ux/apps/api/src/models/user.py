@@ -11,6 +11,7 @@ from typing import Optional
 
 from beanie import Document, Indexed
 from pydantic import Field, EmailStr
+from pymongo import IndexModel, ASCENDING
 
 
 class User(Document):
@@ -69,7 +70,7 @@ class RefreshToken(Document):
     class Settings:
         name = "refresh_tokens"
         indexes = [
-            "user_id",
+            IndexModel([("user_id", ASCENDING)]),
             # TTL index for automatic cleanup of expired tokens
-            {"keys": [("expires_at", 1)], "expireAfterSeconds": 0},
+            IndexModel([("expires_at", ASCENDING)], expireAfterSeconds=0),
         ]

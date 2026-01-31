@@ -37,11 +37,13 @@ class Settings(BaseSettings):
         env_file=".env",
         env_file_encoding="utf-8",
         case_sensitive=True,
+        extra="ignore",  # Ignore extra env vars not defined in the model
     )
 
     # Application
     APP_NAME: str = "Pulse UX Optimizer"
     APP_URL: str = "http://localhost:3000"
+    API_URL: str = "http://localhost:8000"
     DEBUG: bool = False
 
     # Database

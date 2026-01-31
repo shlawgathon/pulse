@@ -50,7 +50,7 @@ class PullRequest(Document):
     github_pr_number: Optional[int] = Field(default=None)
     github_pr_url: Optional[str] = Field(default=None)
     branch_name: str = Field(...)
-    status: Indexed(PRStatus) = Field(default=PRStatus.PENDING)
+    status: PRStatus = Field(default=PRStatus.PENDING)
     code_changes: Optional[dict[str, Any]] = Field(default=None)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     merged_at: Optional[datetime] = Field(default=None)

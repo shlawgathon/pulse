@@ -11,6 +11,7 @@ from typing import Optional
 
 from beanie import Document, Indexed
 from pydantic import BaseModel, Field
+from pymongo import IndexModel, ASCENDING
 
 
 class PatchAction(str, Enum):
@@ -72,5 +73,5 @@ class Variant(Document):
     class Settings:
         name = "variants"
         indexes = [
-            [("experiment_id", 1), ("is_control", 1)],
+            IndexModel([("experiment_id", ASCENDING), ("is_control", ASCENDING)]),
         ]
