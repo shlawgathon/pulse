@@ -3,6 +3,7 @@
  */
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import Image from "next/image";
 
 export default function AuthLayout({
   children,
@@ -27,9 +28,13 @@ export default function AuthLayout({
         <div className="w-full max-w-md">
           {/* Logo */}
           <div className="flex items-center justify-center gap-2 mb-8">
-            <div className="w-10 h-10 bg-primary rounded-md flex items-center justify-center">
-              <span className="text-black font-bold text-xl">P</span>
-            </div>
+            <Image
+              src="/logo.png"
+              alt="Pulse Logo"
+              width={40}
+              height={40}
+              className="w-10 h-10"
+            />
             <span className="font-semibold text-2xl">Pulse</span>
           </div>
 
