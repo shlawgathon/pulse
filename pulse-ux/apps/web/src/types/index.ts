@@ -118,3 +118,16 @@ export interface PullRequest {
 export interface ApiError {
   detail: string;
 }
+
+// Daytona Preview types
+export interface PreviewStatus {
+  available: boolean;
+  message: string;
+}
+
+export interface PreviewResponse {
+  preview_url: string;
+  session_id: string;
+  expires_at: string;
+  available: boolean;
+}

@@ -4,6 +4,7 @@
  */
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import Image from "next/image";
 
 export default function MarketingLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -13,9 +14,13 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
         <nav className="container mx-auto px-6 h-16 flex items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
-              <span className="text-black font-bold text-lg">P</span>
-            </div>
+            <Image
+              src="/logo.png"
+              alt="Pulse Logo"
+              width={32}
+              height={32}
+              className="w-8 h-8"
+            />
             <span className="font-semibold text-lg">Pulse</span>
           </Link>
 
@@ -58,9 +63,13 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
             {/* Brand */}
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
-                  <span className="text-black font-bold text-lg">P</span>
-                </div>
+                <Image
+                  src="/logo.png"
+                  alt="Pulse Logo"
+                  width={32}
+                  height={32}
+                  className="w-8 h-8"
+                />
                 <span className="font-semibold text-lg">Pulse</span>
               </div>
               <p className="text-sm text-white/50">AI-powered UX optimization for modern teams.</p>
