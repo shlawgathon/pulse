@@ -15,6 +15,7 @@
     "build:web": "cd apps/web && bun run build",
     "build:actuator": "cd packages/actuator && bun run build",
     "lint": "cd apps/web && bun run lint",
+    "format": "cd apps/web && bun run format",
     "test": "bun run test:web test:api",
     "test:web": "cd apps/web && bun run test",
     "test:api": "cd apps/api && uv run pytest"

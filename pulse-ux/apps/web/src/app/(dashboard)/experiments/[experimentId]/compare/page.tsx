@@ -8,7 +8,7 @@ import { api } from "@/lib/api-client";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PageLoading } from "@/components/loading-spinner";
-import { VariantPreview, VariantPreviewFallback } from "@/components/variant-preview";
+import { VariantPreview } from "@/components/variant-preview";
 import { formatConversionRate } from "@/lib/utils";
 import type { ComparisonData, Variant } from "@/types";
 
