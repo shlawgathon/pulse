@@ -1,0 +1,20 @@
+{
+  "name": "@pulse-ux/actuator",
+  "version": "1.0.0",
+  "description": "Pulse UX Optimizer - Client-side A/B testing actuator script",
+  "type": "module",
+  "main": "dist/actuator.js",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "bun run build:iife",
+    "build:iife": "bun build src/index.ts --outfile=dist/actuator.js --format=iife --minify --target=browser",
+    "build:esm": "bun build src/index.ts --outfile=dist/actuator.esm.js --format=esm --minify --target=browser",
+    "dev": "bun build src/index.ts --outfile=dist/actuator.js --format=iife --target=browser --watch",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0"
+  }
+}

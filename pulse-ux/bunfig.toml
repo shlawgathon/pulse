@@ -1,0 +1,7 @@
+[install]
+# Save exact versions to lockfile
+exact = true
+
+[run]
+# Enable bun shell for scripts
+shell = true
