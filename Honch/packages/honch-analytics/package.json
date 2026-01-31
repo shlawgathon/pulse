@@ -1,0 +1,42 @@
+{
+  "name": "@honch/analytics",
+  "version": "0.1.1",
+  "description": "Lightweight JS/TS client for Honch Analytics events API.",
+  "license": "MIT",
+  "type": "module",
+  "main": "dist/index.cjs",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "sideEffects": false,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/honch-io/honch.git"
+  },
+  "bugs": {
+    "url": "https://github.com/honch-io/honch/issues"
+  },
+  "homepage": "https://honch.io",
+  "scripts": {
+    "build": "tsup src/index.ts --format esm,cjs --dts --clean",
+    "dev": "tsup src/index.ts --format esm,cjs --dts --watch",
+    "lint": "echo 'no lint configured'",
+    "prepublishOnly": "bun run build"
+  },
+  "dependencies": {
+    "rrweb": "^2.0.0-alpha.4"
+  },
+  "devDependencies": {
+    "tsup": "^8.2.4",
+    "typescript": "^5.9.2"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

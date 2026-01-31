@@ -1,0 +1,118 @@
+@import "tailwindcss";
+@plugin 'tailwind-scrollbar';
+
+@theme {
+  --font-sans: "Inter", sans-serif;
+  
+  --color-primary: #ea580c;
+  --color-primary-content: #fff9f6;
+  --color-primary-dark: #b9460a;
+  --color-primary-light: #f57634;
+  
+  --color-secondary: #0c54ea;
+  --color-secondary-content: #f6f9ff;
+  --color-secondary-dark: #0a43b9;
+  --color-secondary-light: #3473f5;
+  
+  --color-background: #1b1918;
+  --color-foreground: #292523;
+  --color-border: #453e3b;
+  
+  --color-copy: #fbfbfb;
+  --color-copy-light: #dcd8d6;
+  --color-copy-lighter: #aca49f;
+  
+  --color-success: #0cea0c;
+  --color-warning: #eaea0c;
+  --color-error: #ea0c0c;
+  --color-success-content: #000000;
+  --color-warning-content: #000000;
+  --color-error-content: #fff6f6;
+  --color-autofill: #3a2e1f;
+}
+
+:root {
+  --color-primary: #ea580c;
+  --color-primary-content: #fff9f6;
+  --color-primary-dark: #b9460a;
+  --color-primary-light: #f57634;
+
+  --color-secondary: #0c54ea;
+  --color-secondary-content: #f6f9ff;
+  --color-secondary-dark: #0a43b9;
+  --color-secondary-light: #3473f5;
+
+  --color-background: #1b1918;
+  --color-foreground: #292523;
+  --color-border: #453e3b;
+
+  --color-copy: #fbfbfb;
+  --color-copy-light: #dcd8d6;
+  --color-copy-lighter: #aca49f;
+
+  --color-success: #0cea0c;
+  --color-warning: #eaea0c;
+  --color-error: #ea0c0c;
+  --color-success-content: #000000;
+  --color-warning-content: #000000;
+  --color-error-content: #fff6f6;
+  --color-autofill: #3a2e1f;
+}
+
+.theme-light {
+  --color-primary: #ea580c;
+  --color-primary-content: #fff9f6;
+  --color-primary-dark: #b9460a;
+  --color-primary-light: #f57634;
+
+  --color-secondary: #0c54ea;
+  --color-secondary-content: #f6f9ff;
+  --color-secondary-dark: #0a43b9;
+  --color-secondary-light: #3473f5;
+
+  --color-background: #f1efef;
+  --color-foreground: #fbfbfb;
+  --color-border: #e2dedd;
+
+  --color-copy: #292523;
+  --color-copy-light: #6e645e;
+  --color-copy-lighter: #958a84;
+
+  --color-success: #0cea0c;
+  --color-warning: #eaea0c;
+  --color-error: #ea0c0c;
+  --color-success-content: #000000;
+  --color-warning-content: #000000;
+  --color-error-content: #fff6f6;
+  --color-autofill: #e2dedd;
+}
+
+@keyframes fade-in {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes fade-out {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.1s ease-out forwards;
+}
+
+.animate-fade-out {
+  animation: fade-out 0.1s ease-in forwards;
+}
+
+.chat-fade-in {
+  animation: fade-in 0.5s ease-out forwards;
+}

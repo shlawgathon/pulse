@@ -1,0 +1,26 @@
+{
+  "name": "honch-monorepo",
+  "version": "1.0.0",
+  "devDependencies": {
+    "typescript": "^5.9.2",
+    "@types/node": "^20.19.11"
+  },
+  "private": true,
+  "scripts": {
+    "dev": "bun run --cwd backend dev & bun run --cwd frontend dev",
+    "dev:backend": "bun run --cwd backend dev",
+    "dev:frontend": "bun run --cwd frontend dev",
+    "build": "bun run --cwd frontend build",
+    "start": "bun run --cwd backend start",
+    "migrate": "bun run --cwd backend migrate",
+    "generate": "bun run --cwd backend generate",
+    "lint": "bun run --cwd frontend lint",
+    "install:all": "bun install"
+  },
+  "type": "module",
+  "workspaces": [
+    "backend",
+    "frontend",
+    "packages/*"
+  ]
+}

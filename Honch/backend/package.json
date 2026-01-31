@@ -1,0 +1,34 @@
+{
+  "name": "@honch/backend",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "index.ts",
+  "scripts": {
+    "start": "bun run index.ts",
+    "dev": "bun run --hot index.ts",
+    "migrate": "drizzle-kit push:pg",
+    "generate": "drizzle-kit generate:pg"
+  },
+  "dependencies": {
+    "@google/genai": "^1.34.0",
+    "@hono/node-server": "^1.19.0",
+    "@hono/zod-validator": "^0.7.6",
+    "@neondatabase/serverless": "latest",
+    "bcryptjs": "^2.4.3",
+    "dotenv": "^16.6.1",
+    "drizzle-kit": "^0.20.18",
+    "drizzle-orm": "^0.30.10",
+    "hono": "^4.9.4",
+    "jsonwebtoken": "^9.0.2",
+    "pg": "^8.16.3",
+    "ua-parser-js": "^1.0.41",
+    "undici": "^6.21.3",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/ua-parser-js": "^0.7.39",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "typescript": "^5.9.2"
+  }
+}
