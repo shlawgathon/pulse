@@ -51,6 +51,7 @@ class ExperimentResponse(BaseModel):
     ended_at: str | None = None
     winner_variant_id: str | None = None
     base_screenshot_url: str | None = None
+    base_html_snapshot: str | None = None
 
 
 class VariantResponse(BaseModel):
@@ -439,6 +440,7 @@ async def get_comparison(
             ended_at=experiment.ended_at.isoformat() if experiment.ended_at else None,
             winner_variant_id=experiment.winner_variant_id,
             base_screenshot_url=experiment.base_screenshot_url,
+            base_html_snapshot=experiment.base_html_snapshot,
         ),
         variants=[
             VariantResponse(

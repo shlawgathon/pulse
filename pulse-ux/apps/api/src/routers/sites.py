@@ -26,8 +26,9 @@ class SiteCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=100, description="Site display name")
     domain: str = Field(
         ...,
-        pattern=r"^[a-zA-Z0-9][-a-zA-Z0-9]*(\.[a-zA-Z0-9][-a-zA-Z0-9]*)+$",
-        description="Site domain (e.g., example.com)",
+        min_length=1,
+        max_length=255,
+        description="Site domain or URL (e.g., example.com or https://example.com/)",
     )
     github_repo: str | None = Field(None, description="GitHub repository URL for PR generation")
     github_pat: str | None = Field(None, description="GitHub Personal Access Token")

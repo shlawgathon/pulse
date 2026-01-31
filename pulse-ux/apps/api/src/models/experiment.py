@@ -49,7 +49,7 @@ class Experiment(Document):
 
     site_id: Indexed(str)
     name: str = Field(..., min_length=1, max_length=200)
-    description: Optional[str] = Field(default=None, max_length=2000)
+    description: Optional[str] = Field(default=None)
     url_pattern: str = Field(...)
     target_url: str = Field(...)
     status: ExperimentStatus = Field(default=ExperimentStatus.DRAFT)

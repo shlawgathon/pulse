@@ -12,6 +12,9 @@ import logging
 from datetime import datetime
 import re
 
+from beanie import PydanticObjectId
+from beanie.operators import In
+
 from src.models.pull_request import PullRequest, PRStatus
 from src.models.experiment import Experiment, ExperimentStatus
 from src.models.variant import Variant
@@ -52,7 +55,7 @@ class PRService:
         """
         # Get experiment and verify ownership
         experiment = await Experiment.find_one(
-            Experiment.id == experiment_id,
+            Experiment.id == PydanticObjectId(experiment_id),
             Experiment.created_by == user_id,
         )
 
@@ -66,7 +69,7 @@ class PRService:
 
         # Get the variant
         variant = await Variant.find_one(
-            Variant.id == variant_id,
+            Variant.id == PydanticObjectId(variant_id),
             Variant.experiment_id == experiment_id,
         )
         if variant is None:
@@ -87,7 +90,7 @@ class PRService:
         existing = await PullRequest.find_one(
             PullRequest.experiment_id == experiment_id,
             PullRequest.variant_id == variant_id,
-            PullRequest.status.in_([PRStatus.PENDING, PRStatus.CREATED]),
+            In(PullRequest.status, [PRStatus.PENDING, PRStatus.CREATED]),
         )
         if existing:
             logger.info(f"PR already exists for experiment {experiment_id} variant {variant_id}")
@@ -141,7 +144,7 @@ class PRService:
 
         # Verify user owns the experiment
         experiment = await Experiment.find_one(
-            Experiment.id == pr.experiment_id,
+            Experiment.id == PydanticObjectId(pr.experiment_id),
             Experiment.created_by == user_id,
         )
         if experiment is None:
@@ -169,7 +172,7 @@ class PRService:
         # If experiment_id is provided, verify ownership and return directly
         if experiment_id:
             experiment = await Experiment.find_one(
-                Experiment.id == experiment_id,
+                Experiment.id == PydanticObjectId(experiment_id),
                 Experiment.created_by == user_id,
             )
             if experiment is None:

@@ -8,6 +8,7 @@ import { api } from "@/lib/api-client";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PageLoading } from "@/components/loading-spinner";
+import { VariantPreview, VariantPreviewFallback } from "@/components/variant-preview";
 import { formatConversionRate } from "@/lib/utils";
 import type { ComparisonData, Variant } from "@/types";
 
@@ -228,7 +229,13 @@ export default function CompareVariantsPage() {
               </div>
 
               <div ref={leftPanelRef} className="flex-1 overflow-auto rounded-lg border bg-card">
-                {leftVariant.screenshot_url ? (
+                {comparison.experiment.base_html_snapshot ? (
+                  <VariantPreview
+                    baseHtml={comparison.experiment.base_html_snapshot}
+                    variant={leftVariant}
+                    className="min-h-[500px]"
+                  />
+                ) : leftVariant.screenshot_url ? (
                   <div className="relative w-full">
                     <Image
                       src={leftVariant.screenshot_url}
@@ -285,7 +292,13 @@ export default function CompareVariantsPage() {
               </div>
 
               <div ref={rightPanelRef} className="flex-1 overflow-auto rounded-lg border bg-card">
-                {rightVariant.screenshot_url ? (
+                {comparison.experiment.base_html_snapshot ? (
+                  <VariantPreview
+                    baseHtml={comparison.experiment.base_html_snapshot}
+                    variant={rightVariant}
+                    className="min-h-[500px]"
+                  />
+                ) : rightVariant.screenshot_url ? (
                   <div className="relative w-full">
                     <Image
                       src={rightVariant.screenshot_url}
