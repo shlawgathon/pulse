@@ -56,7 +56,7 @@ export default function NewSitePage() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="p-6 max-w-2xl mx-auto">
       <div className="mb-8">
         <h1 className="text-2xl font-semibold text-foreground">Add Site</h1>
         <p className="mt-1 text-sm text-muted-foreground">Register a website to start running A/B tests</p>

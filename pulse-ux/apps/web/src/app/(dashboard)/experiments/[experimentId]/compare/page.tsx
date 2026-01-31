@@ -155,7 +155,7 @@ export default function CompareVariantsPage() {
   }
 
   return (
-    <div className="h-[calc(100vh-8rem)] flex flex-col">
+    <div className="p-6 h-[calc(100vh-8rem)] flex flex-col">
       {/* Header */}
       <div className="flex-shrink-0 pb-4 border-b">
         <div className="flex items-center justify-between">
