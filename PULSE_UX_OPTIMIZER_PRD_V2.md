@@ -34,9 +34,11 @@
 
 1. **Generate UX variants** using LLM via OpenRouter (currently Moonshot Kimi K2.5), informed by live DOM scraping via Firecrawl
 2. **Deploy runtime experiments** without code deployments using an injected "actuator" script
-3. **Compare variants side-by-side** with visual diff rendering and AI-generated insights
-4. **Choose winning variants** through an intuitive dashboard interface
-5. **Generate Pull Requests** automatically to codify the winning variant into the codebase
+3. **Record user sessions** automatically via rrweb for qualitative analysis of each variant
+4. **Compare variants side-by-side** with visual diff rendering and AI-generated insights
+5. **Watch session replays** to understand real user behavior per variant
+6. **Choose winning variants** through an intuitive dashboard interface
+7. **Generate Pull Requests** automatically to codify the winning variant into the codebase
 
 The platform addresses the critical gap in the original Honch implementation plan: the translation layer between runtime DOM patches and actual source code changes suitable for version control.
 
@@ -729,6 +731,73 @@ class PullRequest(Document):
         ]
 ```
 
+#### 6.1.7 Session Recordings Collection
+
+```python
+"""
+Session recordings captured via rrweb for experiment visitors.
+
+This collection stores rrweb event data for replaying user sessions
+during A/B testing experiments.
+"""
+from datetime import datetime
+from typing import Any, Optional
+from beanie import Document, Indexed
+from pydantic import Field
+from pymongo import IndexModel, ASCENDING, DESCENDING
+
+
+class SessionRecording(Document):
+    """
+    Stores rrweb session recording data for experiment visitors.
+
+    Attributes:
+        session_id: Unique identifier for this recording session
+        visitor_id: Reference to visitor (matches Assignment.visitor_id)
+        experiment_id: Reference to the Experiment being recorded
+        variant_id: Reference to the assigned Variant
+        site_id: Reference to the parent Site
+        url: Page URL where recording was captured
+        user_agent: Visitor's browser user agent
+        events: List of rrweb events (stored as JSON array)
+        events_count: Number of events in the recording
+        duration_ms: Recording duration in milliseconds
+        started_at: When recording started
+        ended_at: When recording ended
+        is_complete: Whether recording ended normally (vs page abandon)
+    """
+    session_id: str = Field(...)
+    visitor_id: str = Field(..., min_length=1, max_length=100)
+    experiment_id: str = Field(...)
+    variant_id: str = Field(...)
+    site_id: str = Field(...)
+    url: str = Field(..., max_length=2000)
+    user_agent: Optional[str] = Field(default=None, max_length=500)
+
+    # Recording data - stored as list of dicts (rrweb events)
+    events: list[dict[str, Any]] = Field(default_factory=list)
+    events_count: int = Field(default=0)
+    duration_ms: int = Field(default=0)
+
+    # Timestamps
+    started_at: datetime = Field(default_factory=datetime.utcnow)
+    ended_at: Optional[datetime] = Field(default=None)
+
+    # Metadata
+    is_complete: bool = Field(default=False)
+
+    class Settings:
+        name = "session_recordings"
+        indexes = [
+            # Query recordings by experiment (most common query)
+            IndexModel([("experiment_id", ASCENDING), ("started_at", DESCENDING)]),
+            # Query by visitor for listing their sessions
+            IndexModel([("visitor_id", ASCENDING), ("experiment_id", ASCENDING)]),
+            # Session lookup for upserting events (unique)
+            IndexModel([("session_id", ASCENDING)], unique=True),
+        ]
+```
+
 ---
 
 ## 7. API Specification
@@ -957,29 +1026,32 @@ GET /api/v1/experiments/{experiment_id}/comparison:
     - bearerAuth: []
 ```
 
-#### 7.2.3 Actuator Script Endpoint (Public)
+#### 7.2.3 Actuator Script Endpoints (Public)
 
 ```yaml
-# Public endpoint for the injected script (no authentication)
+# Public endpoints for the injected script (no authentication required)
+# Site identification via X-Public-Key header
 
-GET /api/v1/actuator/{public_key}/experiments:
-  summary: Get active experiments for a site
+POST /api/v1/actuator/assign:
+  summary: Get variant assignments for a visitor
   description: |
-    Called by the actuator script to fetch experiments.
-    Uses the public_key for site identification.
-  parameters:
-    - name: public_key
-      in: path
+    Called by the actuator script on page load to determine
+    which experiments apply and what variant to show.
+  headers:
+    X-Public-Key:
       required: true
       schema: { type: string }
-    - name: visitor_key
-      in: query
-      required: true
-      schema: { type: string }
-    - name: url
-      in: query
-      required: true
-      schema: { type: string }
+  requestBody:
+    content:
+      application/json:
+        schema:
+          type: object
+          required: [visitor_id, url]
+          properties:
+            visitor_id: { type: string }
+            url: { type: string }
+            user_agent: { type: string }
+            referrer: { type: string }
   responses:
     200:
       content:
@@ -987,17 +1059,116 @@ GET /api/v1/actuator/{public_key}/experiments:
           schema:
             type: object
             properties:
-              experiments:
+              visitor_id: { type: string }
+              assignments:
                 type: array
                 items:
                   type: object
                   properties:
                     experiment_id: { type: string }
                     variant_id: { type: string }
+                    is_control: { type: boolean }
                     patches: { type: array }
 
-POST /api/v1/actuator/{public_key}/events:
-  summary: Track events from actuator script
+POST /api/v1/actuator/track/impression:
+  summary: Track variant impression
+  description: Called when visitor sees a variant (uses sendBeacon)
+  responses:
+    204: { description: Tracked successfully }
+
+POST /api/v1/actuator/track/conversion:
+  summary: Track conversion event
+  description: Called when visitor completes a goal
+  responses:
+    204: { description: Tracked successfully }
+
+POST /api/v1/actuator/recording:
+  summary: Upload session recording events
+  description: |
+    Called by the actuator script to upload rrweb events.
+    Supports batched uploads and final flush on page unload.
+    Events are appended to existing session or create new recording.
+  requestBody:
+    content:
+      application/json:
+        schema:
+          type: object
+          required: [session_id, visitor_id, experiment_id, variant_id, url, events]
+          properties:
+            session_id: { type: string, maxLength: 100 }
+            visitor_id: { type: string, maxLength: 100 }
+            experiment_id: { type: string }
+            variant_id: { type: string }
+            url: { type: string, maxLength: 2000 }
+            events:
+              type: array
+              maxItems: 1000
+              description: rrweb event objects
+            is_final: { type: boolean, default: false }
+            user_agent: { type: string, maxLength: 500 }
+  responses:
+    204: { description: Recording saved successfully }
+```
+
+#### 7.2.4 Session Recordings Endpoints (Authenticated)
+
+```yaml
+GET /api/v1/experiments/{experiment_id}/recordings:
+  summary: List session recordings for an experiment
+  parameters:
+    - name: experiment_id
+      in: path
+      required: true
+      schema: { type: string }
+    - name: skip
+      in: query
+      schema: { type: integer, default: 0 }
+    - name: limit
+      in: query
+      schema: { type: integer, default: 20, maximum: 100 }
+    - name: variant_id
+      in: query
+      schema: { type: string }
+      description: Filter by variant
+  responses:
+    200:
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              type: object
+              properties:
+                id: { type: string }
+                session_id: { type: string }
+                visitor_id: { type: string }
+                variant_id: { type: string }
+                url: { type: string }
+                duration_ms: { type: integer }
+                events_count: { type: integer }
+                started_at: { type: string, format: date-time }
+                is_complete: { type: boolean }
+
+GET /api/v1/experiments/{experiment_id}/recordings/{recording_id}:
+  summary: Get full recording with events for playback
+  responses:
+    200:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              id: { type: string }
+              session_id: { type: string }
+              visitor_id: { type: string }
+              variant_id: { type: string }
+              url: { type: string }
+              events: { type: array, description: rrweb events for playback }
+              duration_ms: { type: integer }
+              events_count: { type: integer }
+              started_at: { type: string, format: date-time }
+              ended_at: { type: string, format: date-time }
+              is_complete: { type: boolean }
 ```
 
 ---
@@ -2527,13 +2698,43 @@ openrouter_client = OpenRouterClient()
 
 ## 10. Injector Script ("Actuator")
 
-The actuator script implementation remains the same as in the previous version. See Section 10 of the original PRD for the complete JavaScript implementation with:
+The actuator script (`packages/actuator/src/index.ts`) is a lightweight TypeScript bundle (~7KB) that runs on customer websites:
 
-1. Visitor key generation and persistence
-2. Experiment fetching from the backend
-3. DOM patch application with security constraints
-4. MutationObserver for SPA/hydration resilience
-5. Event tracking via sendBeacon
+### Core Features:
+1. **Visitor ID generation** and localStorage persistence
+2. **Experiment assignment fetching** from `/api/v1/actuator/assign`
+3. **DOM patch application** with all patch action types (style, class, attribute, text, html, hide, show)
+4. **Impression/conversion tracking** via sendBeacon for reliability
+5. **Session recording** via rrweb (dynamically loaded from CDN ~40KB only when experiments are active)
+
+### Session Recording Implementation:
+- rrweb is loaded dynamically from CDN only when visitor has active experiment assignments
+- Events are batched (50 events or 10-second intervals) to reduce network overhead
+- Final flush occurs on `beforeunload` using sendBeacon for reliable delivery
+- Visibility change triggers interim flush to prevent data loss on tab switches
+- Maximum buffer size (500 events) prevents memory issues on long sessions
+
+### Public API:
+```typescript
+window.PulseUX = {
+  init(config: { publicKey: string; apiUrl?: string; debug?: boolean; enableRecording?: boolean }): Promise<void>;
+  refresh(): void;              // Re-apply patches (for SPAs)
+  trackConversion(eventName?: string, metadata?: Record<string, unknown>): void;
+  getVisitor(): string;         // Get visitor ID
+  getAssignments(): VariantAssignment[];
+  stopRecording(): void;        // Manually stop recording
+};
+```
+
+### Usage:
+```html
+<script
+  src="https://cdn.pulse-ux.com/actuator.js"
+  data-public-key="your-site-public-key"
+  data-api-url="https://api.pulse-ux.com"
+  data-debug="false"
+></script>
+```
 
 ---
 
@@ -2556,6 +2757,8 @@ Key integration points:
 | OpenRouter | LLM access (Kimi K2.5) | API Key (Bearer token) |
 | Resend | Email notifications | API Key |
 | GitHub | PR creation | Personal Access Token (initial), OAuth (future) |
+| rrweb | Session recording & replay | None (loaded via CDN) |
+| rrweb-player | Session playback in dashboard | npm package |
 
 ---
 

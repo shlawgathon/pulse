@@ -115,6 +115,33 @@ export interface PullRequest {
   error_message?: string | null;
 }
 
+// Session Recording types
+export interface SessionRecordingListItem {
+  id: string;
+  session_id: string;
+  visitor_id: string;
+  variant_id: string;
+  url: string;
+  duration_ms: number;
+  events_count: number;
+  started_at: string;
+  is_complete: boolean;
+}
+
+export interface SessionRecordingDetail {
+  id: string;
+  session_id: string;
+  visitor_id: string;
+  variant_id: string;
+  url: string;
+  events: unknown[];
+  duration_ms: number;
+  events_count: number;
+  started_at: string;
+  ended_at?: string | null;
+  is_complete: boolean;
+}
+
 // API response types
 export interface ApiError {
   detail: string;

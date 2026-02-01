@@ -21,7 +21,15 @@
       "Bash(ping:*)",
       "Bash(netstat:*)",
       "Bash(TASKKILL //F //PID 17292)",
-      "Bash(TASKKILL //F //PID:*)"
+      "Bash(TASKKILL //F //PID:*)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(tree:*)",
+      "Bash(bun install:*)",
+      "Bash(bunx tsc:*)",
+      "Bash(dir /s /b \"C:\\\\Users\\\\aritr\\\\Desktop\\\\GitHub Projects\\\\pulse\\\\pulse-ux\\\\README.md\")",
+      "Bash(dir /s /b \"C:\\\\Users\\\\aritr\\\\Desktop\\\\GitHub Projects\\\\pulse\\\\pulse-ux\\\\*.md\")",
+      "Bash(ls:*)",
+      "Bash(cd:*)"
     ]
   }
 }

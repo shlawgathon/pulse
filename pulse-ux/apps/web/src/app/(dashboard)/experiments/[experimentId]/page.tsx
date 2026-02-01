@@ -6,8 +6,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { api } from "@/lib/api-client";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StatusBadge } from "@/components/status-badge";
 import { PageLoading } from "@/components/loading-spinner";
+import { SessionReplays } from "@/components/session-replays";
 import { formatDate, calculateConversionRate, calculateLift } from "@/lib/utils";
 import type { Experiment, Variant, PullRequest } from "@/types";
 
@@ -245,112 +247,123 @@ export default function ExperimentDetailPage() {
         </div>
       )}
 
-      {/* Variants */}
-      <div>
-        <h2 className="text-lg font-medium mb-4">Variants</h2>
+      {/* Tabs for Variants and Session Replays */}
+      <Tabs defaultValue="variants" className="w-full">
+        <TabsList>
+          <TabsTrigger value="variants">Variants</TabsTrigger>
+          <TabsTrigger value="replays">Session Replays</TabsTrigger>
+        </TabsList>
 
-        {/* Control */}
-        {control && (
-          <div className="mb-4">
-            <div className="rounded-lg border bg-card p-4">
-              <div className="flex items-start justify-between">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-medium">{control.name}</h3>
-                    <span
-                      className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium"
-                      role="status"
-                    >
-                      Control
-                    </span>
-                  </div>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    {control.description || "Original version (no changes)"}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-2xl font-semibold">{controlConversionRate.toFixed(1)}%</p>
-                  <p className="text-xs text-muted-foreground">
-                    {control.conversions} / {control.impressions}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Treatment Variants */}
-        <div className="space-y-3">
-          {treatmentVariants.map((variant) => {
-            const isWinner = variant.id === experiment.winner_variant_id;
-            const conversionRate = calculateConversionRate(variant.conversions, variant.impressions);
-            const lift = calculateLift(conversionRate, controlConversionRate);
-
-            return (
-              <div
-                key={variant.id}
-                className={`rounded-lg border bg-card p-4 ${isWinner ? "border-primary ring-1 ring-primary" : ""}`}
-              >
+        <TabsContent value="variants" className="mt-4">
+          {/* Control */}
+          {control && (
+            <div className="mb-4">
+              <div className="rounded-lg border bg-card p-4">
                 <div className="flex items-start justify-between">
                   <div>
                     <div className="flex items-center gap-2">
-                      <h3 className="font-medium">{variant.name}</h3>
-                      {isWinner && (
-                        <span
-                          className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary"
-                          role="status"
-                        >
-                          Winner
-                        </span>
-                      )}
+                      <h3 className="font-medium">{control.name}</h3>
+                      <span
+                        className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium"
+                        role="status"
+                      >
+                        Control
+                      </span>
                     </div>
-                    <p className="mt-1 text-sm text-muted-foreground">{variant.description}</p>
-                    {variant.patches.length > 0 && (
-                      <p className="mt-2 text-xs text-muted-foreground/70">
-                        {variant.patches.length} DOM patch
-                        {variant.patches.length !== 1 ? "es" : ""}
-                      </p>
-                    )}
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {control.description || "Original version (no changes)"}
+                    </p>
                   </div>
                   <div className="text-right">
-                    <p className="text-2xl font-semibold">{conversionRate.toFixed(1)}%</p>
+                    <p className="text-2xl font-semibold">{controlConversionRate.toFixed(1)}%</p>
                     <p className="text-xs text-muted-foreground">
-                      {variant.conversions} / {variant.impressions}
+                      {control.conversions} / {control.impressions}
                     </p>
-                    {lift !== 0 && (
-                      <p className={`text-xs font-medium ${lift > 0 ? "text-green-600" : "text-destructive"}`}>
-                        {lift > 0 ? "+" : ""}
-                        {lift.toFixed(1)}% vs control
-                      </p>
-                    )}
                   </div>
                 </div>
-
-                {experiment.status !== "completed" && experiment.status !== "draft" && (
-                  <div className="mt-4 pt-4 border-t">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleSelectWinner(variant.id)}
-                      disabled={selectWinner.isPending}
-                      className="text-primary hover:text-primary/80"
-                    >
-                      Select as Winner
-                    </Button>
-                  </div>
-                )}
               </div>
-            );
-          })}
-        </div>
+            </div>
+          )}
 
-        {treatmentVariants.length === 0 && experiment.status === "draft" && (
-          <div className="rounded-lg border border-dashed p-8 text-center" role="status" aria-live="polite">
-            <p className="text-muted-foreground">Variants are being generated...</p>
-            <p className="mt-1 text-sm text-muted-foreground/70">This may take a minute while AI analyzes your page</p>
+          {/* Treatment Variants */}
+          <div className="space-y-3">
+            {treatmentVariants.map((variant) => {
+              const isWinner = variant.id === experiment.winner_variant_id;
+              const conversionRate = calculateConversionRate(variant.conversions, variant.impressions);
+              const lift = calculateLift(conversionRate, controlConversionRate);
+
+              return (
+                <div
+                  key={variant.id}
+                  className={`rounded-lg border bg-card p-4 ${isWinner ? "border-primary ring-1 ring-primary" : ""}`}
+                >
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-medium">{variant.name}</h3>
+                        {isWinner && (
+                          <span
+                            className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary"
+                            role="status"
+                          >
+                            Winner
+                          </span>
+                        )}
+                      </div>
+                      <p className="mt-1 text-sm text-muted-foreground">{variant.description}</p>
+                      {variant.patches.length > 0 && (
+                        <p className="mt-2 text-xs text-muted-foreground/70">
+                          {variant.patches.length} DOM patch
+                          {variant.patches.length !== 1 ? "es" : ""}
+                        </p>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <p className="text-2xl font-semibold">{conversionRate.toFixed(1)}%</p>
+                      <p className="text-xs text-muted-foreground">
+                        {variant.conversions} / {variant.impressions}
+                      </p>
+                      {lift !== 0 && (
+                        <p className={`text-xs font-medium ${lift > 0 ? "text-green-600" : "text-destructive"}`}>
+                          {lift > 0 ? "+" : ""}
+                          {lift.toFixed(1)}% vs control
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {experiment.status !== "completed" && experiment.status !== "draft" && (
+                    <div className="mt-4 pt-4 border-t">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleSelectWinner(variant.id)}
+                        disabled={selectWinner.isPending}
+                        className="text-primary hover:text-primary/80"
+                      >
+                        Select as Winner
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
-        )}
-      </div>
+
+          {treatmentVariants.length === 0 && experiment.status === "draft" && (
+            <div className="rounded-lg border border-dashed p-8 text-center" role="status" aria-live="polite">
+              <p className="text-muted-foreground">Variants are being generated...</p>
+              <p className="mt-1 text-sm text-muted-foreground/70">
+                This may take a minute while AI analyzes your page
+              </p>
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="replays" className="mt-4">
+          <SessionReplays experimentId={experimentId} variants={variants || []} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

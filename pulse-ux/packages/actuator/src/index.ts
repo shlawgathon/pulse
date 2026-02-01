@@ -6,9 +6,10 @@
  * 2. Assign visitors to variant groups (sticky bucketing)
  * 3. Apply DOM patches to show the assigned variant
  * 4. Track impressions and conversions
+ * 5. Record session replays via rrweb (when experiments are active)
  *
  * The script is designed to be:
- * - Lightweight (~5KB minified)
+ * - Lightweight (~5KB minified, rrweb loaded dynamically)
  * - Non-blocking (async initialization)
  * - Flicker-free (patches applied before paint when possible)
  */
@@ -17,6 +18,7 @@ interface PulseConfig {
   publicKey: string;
   apiUrl?: string;
   debug?: boolean;
+  enableRecording?: boolean; // Enable session recording (default: true when experiments active)
 }
 
 interface DOMPatch {
@@ -49,6 +51,15 @@ let visitorId: string | null = null;
 let assignments: VariantAssignment[] = [];
 let initialized = false;
 
+// Session recording state
+let sessionId: string | null = null;
+let recordingEvents: unknown[] = [];
+let stopRecordingFn: (() => void) | null = null;
+let flushIntervalId: ReturnType<typeof setInterval> | null = null;
+const RECORDING_BATCH_SIZE = 50;
+const RECORDING_FLUSH_INTERVAL_MS = 10000;
+const MAX_EVENTS_BUFFER = 500; // Safety limit to prevent memory issues
+
 /**
  * Generate a unique visitor ID
  */
@@ -56,6 +67,15 @@ function generateVisitorId(): string {
   const timestamp = Date.now().toString(36);
   const randomPart = Math.random().toString(36).substring(2, 15);
   return `${timestamp}-${randomPart}`;
+}
+
+/**
+ * Generate a unique session ID for this page load
+ */
+function generateSessionId(): string {
+  const timestamp = Date.now().toString(36);
+  const randomPart = Math.random().toString(36).substring(2, 15);
+  return `s-${timestamp}-${randomPart}`;
 }
 
 /**
@@ -350,6 +370,151 @@ function trackConversion(eventName?: string, metadata?: Record<string, unknown>)
 }
 
 /**
+ * Dynamically load rrweb from CDN
+ */
+async function loadRrweb(): Promise<{ record: (options: { emit: (event: unknown) => void }) => () => void }> {
+  return new Promise((resolve, reject) => {
+    // Check if already loaded
+    if ((window as unknown as Record<string, unknown>).rrweb) {
+      resolve((window as unknown as Record<string, unknown>).rrweb as { record: (options: { emit: (event: unknown) => void }) => () => void });
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = "https://cdn.jsdelivr.net/npm/rrweb@2.0.0-alpha.13/dist/rrweb.umd.cjs";
+    script.onload = () => {
+      const rrweb = (window as unknown as Record<string, unknown>).rrweb as { record: (options: { emit: (event: unknown) => void }) => () => void };
+      if (rrweb) {
+        resolve(rrweb);
+      } else {
+        reject(new Error("rrweb not found after loading"));
+      }
+    };
+    script.onerror = () => reject(new Error("Failed to load rrweb"));
+    document.head.appendChild(script);
+  });
+}
+
+/**
+ * Flush recording events to the server
+ */
+function flushRecordingEvents(isFinal: boolean = false): void {
+  if (!config || recordingEvents.length === 0 || !sessionId) return;
+
+  const apiUrl = config.apiUrl || DEFAULT_API_URL;
+  const eventsToSend = [...recordingEvents];
+  recordingEvents = []; // Clear buffer
+
+  // Send recording for each active experiment
+  assignments.forEach((assignment) => {
+    const data = JSON.stringify({
+      session_id: sessionId,
+      visitor_id: getVisitorId(),
+      experiment_id: assignment.experiment_id,
+      variant_id: assignment.variant_id,
+      url: window.location.href,
+      events: eventsToSend,
+      is_final: isFinal,
+      user_agent: navigator.userAgent,
+    });
+
+    try {
+      navigator.sendBeacon(
+        `${apiUrl}/api/v1/actuator/recording`,
+        new Blob([data], { type: "application/json" })
+      );
+      debug(`Flushed ${eventsToSend.length} recording events for experiment ${assignment.experiment_id}`);
+    } catch {
+      // Fallback to fetch for large payloads
+      fetch(`${apiUrl}/api/v1/actuator/recording`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Public-Key": config.publicKey,
+        },
+        body: data,
+        keepalive: true,
+      }).catch(() => {
+        debug("Failed to upload recording events");
+      });
+    }
+  });
+}
+
+/**
+ * Start session recording with rrweb
+ */
+async function startRecording(): Promise<void> {
+  if (assignments.length === 0) {
+    debug("No active experiments, skipping recording");
+    return;
+  }
+
+  // Check if recording is disabled
+  if (config?.enableRecording === false) {
+    debug("Recording disabled by config");
+    return;
+  }
+
+  try {
+    const rrweb = await loadRrweb();
+    sessionId = generateSessionId();
+
+    stopRecordingFn = rrweb.record({
+      emit(event: unknown) {
+        recordingEvents.push(event);
+
+        // Flush when batch is full or buffer exceeds max
+        if (recordingEvents.length >= RECORDING_BATCH_SIZE || recordingEvents.length >= MAX_EVENTS_BUFFER) {
+          flushRecordingEvents(false);
+        }
+      },
+    });
+
+    // Periodic flush interval
+    flushIntervalId = setInterval(() => {
+      flushRecordingEvents(false);
+    }, RECORDING_FLUSH_INTERVAL_MS);
+
+    // Flush on page unload
+    window.addEventListener("beforeunload", () => {
+      if (flushIntervalId) {
+        clearInterval(flushIntervalId);
+        flushIntervalId = null;
+      }
+      flushRecordingEvents(true);
+    });
+
+    // Flush on visibility change (tab switch, minimize)
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) {
+        flushRecordingEvents(false);
+      }
+    });
+
+    debug("Started session recording with session ID:", sessionId);
+  } catch (error) {
+    debug("Failed to start recording:", error);
+  }
+}
+
+/**
+ * Stop session recording
+ */
+function stopRecording(): void {
+  if (stopRecordingFn) {
+    stopRecordingFn();
+    stopRecordingFn = null;
+  }
+  if (flushIntervalId) {
+    clearInterval(flushIntervalId);
+    flushIntervalId = null;
+  }
+  flushRecordingEvents(true);
+  debug("Stopped session recording");
+}
+
+/**
  * Initialize Pulse UX
  */
 async function init(userConfig: PulseConfig): Promise<void> {
@@ -385,6 +550,12 @@ async function init(userConfig: PulseConfig): Promise<void> {
     }
 
     initialized = true;
+
+    // Start session recording if there are active experiments
+    if (assignments.length > 0) {
+      // Start recording asynchronously (non-blocking)
+      startRecording();
+    }
   } catch (error) {
     console.error("[Pulse UX] Initialization failed:", error);
   }
@@ -422,6 +593,7 @@ const PulseUX = {
   trackConversion,
   getVisitor,
   getAssignments,
+  stopRecording,
 };
 
 // Auto-initialize if config is provided via data attribute
