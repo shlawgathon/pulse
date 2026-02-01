@@ -40,7 +40,6 @@ flowchart TB
     subgraph Runtime
         F[Actuator Script<br/>1-line embed]
         G[A/B Traffic Split]
-        H[rrweb<br/>Session Recording]
     end
 
     subgraph Output
@@ -55,8 +54,7 @@ flowchart TB
     D --> E
     E --> F
     F --> G
-    G --> H
-    H --> I
+    G --> I
     I --> J
     J --> K
     K -->|Merge| A
@@ -78,7 +76,6 @@ flowchart TB
 | **Database**      | MongoDB Atlas                   | Experiment configs, variant storage, analytics |
 | **AI Engine**     | OpenRouter (Kimi K2.5)          | Variant generation from DOM analysis           |
 | **Scraping**      | Firecrawl                       | Live DOM extraction from target sites          |
-| **Recording**     | rrweb                           | Session replay for qualitative analysis        |
 | **Notifications** | Resend                          | Email alerts for experiment results            |
 
 ## Quick Start
