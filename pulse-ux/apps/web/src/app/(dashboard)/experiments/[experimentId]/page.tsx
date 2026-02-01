@@ -146,7 +146,11 @@ export default function ExperimentDetailPage() {
             <h1 className="text-2xl font-semibold">{experiment.name}</h1>
             <StatusBadge status={experiment.status} />
           </div>
-          <p className="mt-1 text-sm text-muted-foreground">{experiment.description}</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {experiment.description && !experiment.description.toLowerCase().includes("failed") 
+              ? experiment.description 
+              : null}
+          </p>
         </div>
 
         <div className="flex gap-2">
