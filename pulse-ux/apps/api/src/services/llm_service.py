@@ -35,6 +35,8 @@ class VariantGenerationResponse(BaseModel):
 
     variants: list[GeneratedVariant] = Field(..., description="List of generated variants")
     analysis: str = Field(..., description="Overall analysis of the page and opportunities")
+    email_subject: str = Field(..., description="Subject line for the notification email to the user")
+    email_body: str = Field(..., description="HTML body content for the notification email (just the inner content, no <html> wrapper)")
 
 
 class CodeChange(BaseModel):
@@ -161,6 +163,10 @@ For each variant, provide:
 - A brief description (1-2 sentences max)
 - 3-6 specific DOM patches with DRAMATIC visual impact
 - Keep reasoning brief (1 sentence per patch)
+
+Also generate a personalized email notification for the user:
+- Subject: A catchy, exciting subject line about the new experiment (e.g., "Experiment Ready: 20% more clicks?")
+- Body: A friendly, professional message explaining the core optimization strategy. Use HTML tags (<p>, <strong>, <ul>) but NO <html>/<body> wrappers. Mention specific improvements.
 
 Generate {num_variants} distinct variants plus a brief (2-3 sentence) analysis."""
 

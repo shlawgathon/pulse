@@ -108,12 +108,46 @@ async def generate_variants_for_experiment(
                 user = await User.get(experiment.created_by)
                 if user and user.email:
                     experiment_url = f"{settings.APP_URL}/experiments/{experiment_id}"
-                    await resend_client.send_experiment_ready(
+
+                    # Construct personalized email
+                    subject = getattr(response, "email_subject", f"Experiment Ready: {experiment.name}")
+                    body_content = getattr(response, "email_body", f"<p>Variants for <strong>{experiment.name}</strong> are ready.</p>")
+
+                    html_content = f"""
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <style>
+                            body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #333; }}
+                            .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+                            .header {{ background: #000; color: #fff; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }}
+                            .content {{ padding: 30px; border: 1px solid #eee; border-top: none; border-radius: 0 0 8px 8px; }}
+                            .button {{ display: inline-block; background: #84cc16; color: #000; padding: 12px 24px; text-decoration: none; font-weight: bold; margin-top: 20px; border-radius: 6px; }}
+                        </style>
+                    </head>
+                    <body>
+                        <div class="container">
+                            <div class="header">
+                                <h1>Pulse UX Optimizer</h1>
+                            </div>
+                            <div class="content">
+                                {body_content}
+                                <br>
+                                <center>
+                                    <a href="{experiment_url}" class="button">👀 View Results & Select Winner</a>
+                                </center>
+                            </div>
+                        </div>
+                    </body>
+                    </html>
+                    """
+
+                    await resend_client.send_email(
                         to=user.email,
-                        experiment_name=experiment.name,
-                        experiment_url=experiment_url,
+                        subject=subject,
+                        html=html_content,
                     )
-                    logger.info(f"Sent experiment ready email to {user.email}")
+                    logger.info(f"Sent personalized experiment ready email to {user.email}")
             except Exception as email_error:
                 logger.warning(f"Failed to send experiment ready email: {email_error}")
 
