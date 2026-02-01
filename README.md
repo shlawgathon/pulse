@@ -14,7 +14,7 @@
 
 ---
 
-## ⚡️ What is Pulse?
+## What is Pulse?
 
 Pulse is an autonomous agent that fixes your UX conversion leaks.
 
@@ -25,30 +25,63 @@ Instead of just telling you what's wrong, Pulse **generates code** to fix it. It
 ## How It Works
 
 ```mermaid
-flowchart LR
-    A["Customer<br/>Website"] -->|"1-line script"| B["Pulse UX<br/>AI Engine"]
-    B -->|"Auto-generates"| C["A/B Test<br/>Variants"]
-    C -->|"Measures"| D["Winner<br/>PR"]
-    D -->|"Increases"| E["+15-30%<br/>Conversions"]
+flowchart TB
+    subgraph Input
+        A[GitHub Repo URL]
+        B[Target Page URL]
+    end
+
+    subgraph Pulse Engine
+        C[Firecrawl<br/>DOM Scraping]
+        D[LLM<br/>Kimi K2.5 / Claude]
+        E[Variant Generator]
+    end
+
+    subgraph Runtime
+        F[Actuator Script<br/>1-line embed]
+        G[A/B Traffic Split]
+        H[rrweb<br/>Session Recording]
+    end
+
+    subgraph Output
+        I[Analytics Dashboard]
+        J[Winner Detection]
+        K[GitHub PR<br/>Auto-generated]
+    end
+
+    A --> C
+    B --> C
+    C --> D
+    D --> E
+    E --> F
+    F --> G
+    G --> H
+    H --> I
+    I --> J
+    J --> K
+    K -->|Merge| A
 ```
 
-## ✨ Features
+## Features
 
-- **🔍 Generative UI**: Our AI doesn't just chat—it writes production-ready React/HTML code to improved your components.
-- **🚀 Zero-Config Deployment**: Usage via a single `<script>` tag. No complex CI/CD setup required for experiments.
-- **🧪 Auto-Pilot Testing**: Traffic allocation, statistical significance, and rollback are handled automatically.
-- **📦 One-Click PRs**: When a variant wins, Pulse opens a PR in your repo with the permanent code change.
+- **Generative UI**: AI writes production-ready React/HTML code to improve your components
+- **Zero-Config Deployment**: Single `<script>` tag—no CI/CD setup required for experiments
+- **Auto-Pilot Testing**: Traffic allocation, statistical significance, and rollback handled automatically
+- **One-Click PRs**: Winning variants are automatically converted into GitHub Pull Requests
 
-## 🛠 Tech Stack
+## Tech Stack
 
-| Layer         | Technology                                     |
-| ------------- | ---------------------------------------------- |
-| **Frontend**  | Next.js 16, TailwindCSS, shadcn/ui             |
-| **Backend**   | FastAPI, Python 3.12                           |
-| **AI Engine** | Claude 3.5 Sonnet / Kimi k2.5 (via OpenRouter) |
-| **Data**      | MongoDB Atlas, Firecrawl                       |
+| Component         | Technology                      | Purpose                                        |
+| ----------------- | ------------------------------- | ---------------------------------------------- |
+| **Frontend**      | Next.js 16, React 19, shadcn/ui | Dashboard for experiment management            |
+| **Backend**       | FastAPI, Python 3.12            | API server, experiment orchestration           |
+| **Database**      | MongoDB Atlas                   | Experiment configs, variant storage, analytics |
+| **AI Engine**     | OpenRouter (Kimi K2.5)          | Variant generation from DOM analysis           |
+| **Scraping**      | Firecrawl                       | Live DOM extraction from target sites          |
+| **Recording**     | rrweb                           | Session replay for qualitative analysis        |
+| **Notifications** | Resend                          | Email alerts for experiment results            |
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
@@ -67,13 +100,13 @@ cd pulse
 bun install
 cd apps/api && pip install -r requirements.txt
 
-# 3. Sets up environment
+# 3. Set up environment
 cp .env.example .env
 
 # 4. Run locally
 bun dev
 ```
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
