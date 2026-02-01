@@ -5,8 +5,10 @@ Endpoints:
 - POST /: Create a new experiment
 - GET /: List experiments with filtering
 - GET /{experiment_id}: Get experiment details
+- DELETE /{experiment_id}: Delete an experiment
 - POST /{experiment_id}/activate: Activate an experiment
 - POST /{experiment_id}/pause: Pause an experiment
+- POST /{experiment_id}/regenerate: Regenerate variants
 - POST /{experiment_id}/complete: Complete and select winner
 - GET /{experiment_id}/comparison: Get side-by-side comparison data
 """
@@ -211,6 +213,33 @@ async def get_experiment(
         winner_variant_id=experiment.winner_variant_id,
         base_screenshot_url=experiment.base_screenshot_url,
     )
+
+
+@router.delete("/{experiment_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_experiment(
+    experiment_id: str,
+    current_user: User = Depends(get_current_user),
+) -> None:
+    """
+    Delete an experiment and all its variants.
+
+    Args:
+        experiment_id: The experiment's ID.
+        current_user: The authenticated user.
+
+    Raises:
+        HTTPException: If experiment not found or user doesn't have access.
+    """
+    deleted = await experiment_service.delete_experiment(
+        experiment_id=experiment_id,
+        user_id=str(current_user.id),
+    )
+
+    if not deleted:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Experiment not found or access denied",
+        )
 
 
 @router.get("/{experiment_id}/variants", response_model=list[VariantResponse])

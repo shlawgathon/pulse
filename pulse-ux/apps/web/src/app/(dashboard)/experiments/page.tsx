@@ -5,14 +5,15 @@
  */
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { useQuery } from "@tanstack/react-query";
-import { Plus, ExternalLink } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Plus, ExternalLink, Trash2, RefreshCw, AlertCircle } from "lucide-react";
 import { api } from "@/lib/api-client";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { StatusBadge } from "@/components/status-badge";
 import { formatDate, getHostname } from "@/lib/utils";
 import type { Experiment, Site } from "@/types";
+
 
 // Loading skeleton component
 function LoadingSkeleton() {
@@ -38,35 +39,96 @@ function LoadingSkeleton() {
   );
 }
 
-// Experiment card component
-function ExperimentCard({ experiment }: { experiment: Experiment }) {
+// Experiment card component with action buttons
+function ExperimentCard({ 
+  experiment, 
+  onDelete, 
+  onRetry,
+  isDeleting,
+  isRetrying 
+}: { 
+  experiment: Experiment; 
+  onDelete: (id: string) => void;
+  onRetry: (id: string) => void;
+  isDeleting: boolean;
+  isRetrying: boolean;
+}) {
   const hostname = useMemo(() => getHostname(experiment.target_url), [experiment.target_url]);
   const createdDate = useMemo(() => formatDate(experiment.created_at), [experiment.created_at]);
+  
+  // Show retry button for draft (generation in progress or failed) experiments
+  const showRetry = experiment.status === "draft" || experiment.status === "failed";
+  // Check if this is a failed experiment based on description containing error
+  const isFailed = experiment.status === "draft" && experiment.description?.toLowerCase().includes("failed");
+  const displayStatus = isFailed ? "failed" : experiment.status;
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (confirm(`Are you sure you want to delete "${experiment.name}"? This action cannot be undone.`)) {
+      onDelete(experiment.id);
+    }
+  };
+
+  const handleRetry = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onRetry(experiment.id);
+  };
 
   return (
-    <Link
-      href={`/experiments/${experiment.id}`}
-      className="block bg-card rounded-lg border p-4 hover:border-primary/50 transition-colors"
-    >
-      <div className="flex items-start justify-between mb-2">
-        <h3 className="font-medium">{experiment.name}</h3>
-        <StatusBadge status={experiment.status} />
-      </div>
+    <div className="bg-card rounded-lg border hover:border-primary/50 transition-colors">
+      <Link
+        href={`/experiments/${experiment.id}`}
+        className="block p-4"
+      >
+        <div className="flex items-start justify-between mb-2">
+          <h3 className="font-medium">{experiment.name}</h3>
+          <StatusBadge status={displayStatus} />
+        </div>
 
-      {experiment.description && (
-        <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{experiment.description}</p>
-      )}
+        {experiment.description && (
+          <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{experiment.description}</p>
+        )}
 
-      <div className="flex items-center gap-4 text-xs text-muted-foreground">
-        <span className="flex items-center gap-1">
-          <ExternalLink className="h-3 w-3" aria-hidden="true" />
-          {hostname}
-        </span>
-        <span>Created {createdDate}</span>
+        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+          <span className="flex items-center gap-1">
+            <ExternalLink className="h-3 w-3" aria-hidden="true" />
+            {hostname}
+          </span>
+          <span>Created {createdDate}</span>
+        </div>
+      </Link>
+
+      {/* Action buttons */}
+      <div className="flex items-center justify-end gap-2 px-4 pb-3 pt-0">
+        {showRetry && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRetry}
+            disabled={isRetrying}
+            className="text-xs h-7"
+          >
+            <RefreshCw className={`h-3 w-3 mr-1 ${isRetrying ? 'animate-spin' : ''}`} />
+            {isRetrying ? "Retrying..." : "Retry"}
+          </Button>
+        )}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleDelete}
+          disabled={isDeleting}
+          className="text-xs h-7 text-red-600 dark:text-red-400 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+        >
+          <Trash2 className="h-3 w-3 mr-1" />
+          {isDeleting ? "Deleting..." : "Delete"}
+        </Button>
       </div>
-    </Link>
+    </div>
   );
 }
+
 
 // Info cards component
 function InfoCards() {
@@ -94,6 +156,10 @@ function InfoCards() {
 export default function ExperimentsPage() {
   const [selectedSiteId, setSelectedSiteId] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [retryingId, setRetryingId] = useState<string | null>(null);
+  
+  const queryClient = useQueryClient();
 
   // Fetch sites
   const { data: sites } = useQuery({
@@ -112,6 +178,34 @@ export default function ExperimentsPage() {
       return api.get<Experiment[]>(`/api/v1/experiments${query ? `?${query}` : ""}`);
     }
   });
+
+  // Delete mutation
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => api.delete(`/api/v1/experiments/${id}`),
+    onMutate: (id) => setDeletingId(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["experiments"] });
+    },
+    onSettled: () => setDeletingId(null),
+  });
+
+  // Retry/regenerate mutation
+  const retryMutation = useMutation({
+    mutationFn: (id: string) => api.post(`/api/v1/experiments/${id}/regenerate`),
+    onMutate: (id) => setRetryingId(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["experiments"] });
+    },
+    onSettled: () => setRetryingId(null),
+  });
+
+  const handleDelete = (id: string) => {
+    deleteMutation.mutate(id);
+  };
+
+  const handleRetry = (id: string) => {
+    retryMutation.mutate(id);
+  };
 
   return (
     <div className="p-6">
@@ -147,6 +241,7 @@ export default function ExperimentsPage() {
               <SelectItem value="active">Active</SelectItem>
               <SelectItem value="paused">Paused</SelectItem>
               <SelectItem value="completed">Completed</SelectItem>
+              <SelectItem value="failed">Failed</SelectItem>
             </SelectContent>
           </Select>
 
@@ -169,7 +264,14 @@ export default function ExperimentsPage() {
       ) : experiments && experiments.length > 0 ? (
         <div className="grid gap-4">
           {experiments.map((experiment) => (
-            <ExperimentCard key={experiment.id} experiment={experiment} />
+            <ExperimentCard 
+              key={experiment.id} 
+              experiment={experiment}
+              onDelete={handleDelete}
+              onRetry={handleRetry}
+              isDeleting={deletingId === experiment.id}
+              isRetrying={retryingId === experiment.id}
+            />
           ))}
         </div>
       ) : (
@@ -187,3 +289,4 @@ export default function ExperimentsPage() {
     </div>
   );
 }
+

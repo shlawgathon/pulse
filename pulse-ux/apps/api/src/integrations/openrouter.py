@@ -5,13 +5,17 @@ This module provides structured output generation for UX patches
 and code transformations using OpenRouter's OpenAI-compatible API.
 """
 
+import asyncio
 import json
+import logging
 from typing import TypeVar
 
 import httpx
 from pydantic import BaseModel
 
 from src.config import settings
+
+logger = logging.getLogger(__name__)
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -25,7 +29,12 @@ class OpenRouterClient:
     """
 
     BASE_URL = "https://openrouter.ai/api/v1"
-    MODEL = "moonshotai/kimi-k2.5"  # Multimodal model with vision support
+    PRIMARY_MODEL = "moonshotai/kimi-k2.5"  # Multimodal model with vision support
+    FALLBACK_MODEL = "anthropic/claude-sonnet-4"  # Fallback for empty responses
+    MODEL = PRIMARY_MODEL  # Current model (for compatibility)
+    
+    # Preferred providers for Kimi model (more reliable than Novita)
+    PREFERRED_PROVIDERS = ["Fireworks", "Moonshot", "Together"]
 
     def __init__(self, api_key: str | None = None):
         """
@@ -77,6 +86,10 @@ class OpenRouterClient:
             "messages": messages,
             "temperature": temperature,
             "max_tokens": max_tokens,
+            "provider": {
+                "order": self.PREFERRED_PROVIDERS,
+                "allow_fallbacks": True,
+            },
         }
 
         response = await client.post("/chat/completions", json=payload)
@@ -139,26 +152,113 @@ class OpenRouterClient:
             else:
                 enhanced_messages.append(msg)
 
+        # Try with primary model first, then fallback
+        models_to_try = [
+            (self.PRIMARY_MODEL, 2),  # (model, max_retries)
+            (self.FALLBACK_MODEL, 1),
+        ]
+
+        last_error = None
+        empty_response_count = 0
+        models_tried = []
+
+        for model, max_retries in models_to_try:
+            models_tried.append(model)
+            for attempt in range(max_retries):
+                try:
+                    content = await self._try_completion(
+                        client, model, enhanced_messages, temperature, max_tokens
+                    )
+                    
+                    if content:
+                        # Parse and return the response
+                        return self._parse_structured_response(content, response_model)
+                    
+                    # Empty content - retry or fallback
+                    empty_response_count += 1
+                    logger.warning(f"Empty response from {model} (attempt {attempt + 1}/{max_retries}), total empty: {empty_response_count}")
+                    
+                    if attempt < max_retries - 1:
+                        # Wait before retry with exponential backoff
+                        await asyncio.sleep(2 ** attempt)
+                        
+                except httpx.HTTPStatusError as e:
+                    logger.error(f"HTTP error from {model}: {e}")
+                    last_error = str(e)
+                    break  # Move to fallback model on HTTP errors
+                except ValueError as e:
+                    # Schema validation error - don't retry, it won't help
+                    raise
+
+            # Log fallback
+            if model == self.PRIMARY_MODEL:
+                logger.warning(f"⚠️ Primary model {self.PRIMARY_MODEL} exhausted, trying fallback {self.FALLBACK_MODEL}")
+
+        error_msg = f"All models failed. Tried: {models_tried}. Empty responses: {empty_response_count}. Last HTTP error: {last_error}"
+        logger.error(f"❌ {error_msg}")
+        raise ValueError(error_msg)
+
+    async def _try_completion(
+        self,
+        client: httpx.AsyncClient,
+        model: str,
+        messages: list[dict],
+        temperature: float,
+        max_tokens: int,
+    ) -> str | None:
+        """
+        Attempt a single completion call to a specific model.
+        
+        Returns the content string or None if empty.
+        """
         payload = {
-            "model": self.MODEL,
-            "messages": enhanced_messages,
+            "model": model,
+            "messages": messages,
             "temperature": temperature,
             "max_tokens": max_tokens,
-            # Note: reasoning disabled as some providers don't support it
+            "provider": {
+                "order": self.PREFERRED_PROVIDERS,
+                "allow_fallbacks": True,
+            },
         }
 
+        logger.info(f"🤖 Calling {model}...")
         response = await client.post("/chat/completions", json=payload)
         response.raise_for_status()
 
         data = response.json()
-        content = data["choices"][0]["message"].get("content")
         
-        # Debug: print raw response
-        print(f"📥 LLM raw content type: {type(content)}, length: {len(content) if content else 0}")
+        # Handle different response structures
+        try:
+            choices = data.get("choices", [])
+            if not choices:
+                logger.warning(f"⚠️ {model} returned no choices: {data}")
+                return None
+            
+            message = choices[0].get("message", {})
+            content = message.get("content")
+            
+            # Sometimes content can be None or an empty string
+            if content is None:
+                logger.warning(f"⚠️ {model} returned None content, message: {message}")
+                return None
+                
+        except (KeyError, IndexError, TypeError) as e:
+            logger.error(f"❌ Unexpected response structure from {model}: {e}, data: {str(data)[:500]}")
+            return None
+        
+        logger.info(f"📥 {model} response: {len(content) if content else 0} chars")
+        
         if not content:
-            print(f"⚠️ LLM response has no content! Full message: {data['choices'][0]['message']}")
-            raise ValueError(f"LLM returned empty content. Full response: {data}")
+            logger.warning(f"⚠️ {model} returned empty content")
+            return None
+            
+        return content
 
+    def _parse_structured_response(self, content: str, response_model: type[T]) -> T:
+        """
+        Parse and validate the structured response from LLM content.
+        """
         # Clean up any markdown code blocks
         content = content.strip()
         if content.startswith("```json"):
@@ -169,16 +269,17 @@ class OpenRouterClient:
             content = content[:-3]
         content = content.strip()
         
-        print(f"📋 Cleaned content (first 500 chars): {content[:500]}")
+        logger.debug(f"📋 Parsing content ({len(content)} chars)")
 
         try:
             result = response_model.model_validate_json(content)
-            print(f"✅ Parsed response successfully")
+            logger.info(f"✅ Parsed response successfully")
             return result
         except Exception as e:
-            print(f"❌ Schema validation failed: {e}")
-            print(f"❌ Content was: {content[:1000]}")
+            logger.error(f"❌ Schema validation failed: {e}")
+            logger.error(f"❌ Content was: {content[:1000]}")
             raise ValueError(f"LLM response failed schema validation: {e}\nResponse: {content}")
+
 
     async def close(self) -> None:
         """Close the HTTP client."""
