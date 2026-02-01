@@ -47,11 +47,23 @@ export default function CompareVariantsPage() {
         const parsed = JSON.parse(stored) as CompareState;
         // Only use state from last 24 hours
         if (Date.now() - parsed.timestamp < 24 * 60 * 60 * 1000) {
+          // Deduplicate messages by ID to fix any stale duplicates
+          if (parsed.chatMessages) {
+            const seen = new Set<string>();
+            parsed.chatMessages = parsed.chatMessages.filter(msg => {
+              if (seen.has(msg.id)) return false;
+              seen.add(msg.id);
+              return true;
+            });
+          }
           return parsed;
         }
       }
+      // Clear old data
+      localStorage.removeItem(storageKey);
     } catch {
-      // Ignore parse errors
+      // Clear corrupted data
+      localStorage.removeItem(storageKey);
     }
     return {};
   };
@@ -202,13 +214,21 @@ export default function CompareVariantsPage() {
     [selectWinner]
   );
 
+  // Generate unique message IDs using crypto
+  const getNextMsgId = useCallback(() => {
+    return `msg-${crypto.randomUUID()}`;
+  }, []);
+
+  // Polling state for waiting on variant generation
+  const [isPolling, setIsPolling] = useState(false);
+
   const handleChatSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
       if (!chatInput.trim() || isChatSending) return;
 
       const userMessage: ChatMessage = {
-        id: `msg-${Date.now()}`,
+        id: getNextMsgId(),
         role: "user",
         content: chatInput.trim(),
         timestamp: Date.now()
@@ -219,22 +239,82 @@ export default function CompareVariantsPage() {
       setIsChatSending(true);
 
       try {
-        // TODO: Connect to LLM API for modifications
-        // For now, simulate a response
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        const lowerContent = userMessage.content.toLowerCase();
+        
+        // Check if user wants to regenerate
+        const regenerateKeywords = ['regenerate', 'new variant', 'try again', 'different', 'redo', 'refresh', 'generate new', 'create new'];
+        const wantsRegenerate = regenerateKeywords.some(keyword => lowerContent.includes(keyword));
 
-        const assistantMessage: ChatMessage = {
-          id: `msg-${Date.now()}`,
-          role: "assistant",
-          content: `I'll help you with: "${userMessage.content}". This feature is coming soon - I'll be able to suggest DOM patches to modify the variants based on your feedback.`,
-          timestamp: Date.now()
-        };
-        setChatMessages((prev) => [...prev, assistantMessage]);
+        if (wantsRegenerate) {
+          // Trigger actual regeneration
+          const assistantMessage: ChatMessage = {
+            id: getNextMsgId(),
+            role: "assistant",
+            content: `🔄 Regenerating variants based on your feedback: "${userMessage.content}". This may take 30-60 seconds...`,
+            timestamp: Date.now()
+          };
+          setChatMessages((prev) => [...prev, assistantMessage]);
+
+          // Call regenerate API
+          await api.post(`/api/v1/experiments/${experimentId}/regenerate`);
+          
+          // Start polling for completion
+          setIsPolling(true);
+          
+          const pollForVariants = async () => {
+            const maxAttempts = 30; // 60 seconds max (2s intervals)
+            for (let i = 0; i < maxAttempts; i++) {
+              await new Promise(resolve => setTimeout(resolve, 2000));
+              
+              try {
+                const data = await api.get<{ variants: { id: string }[] }>(`/api/v1/experiments/${experimentId}/variants`);
+                
+                // Check if we have non-control variants (regeneration complete)
+                if (data.variants && data.variants.length >= 2) {
+                  // Invalidate and refetch
+                  await queryClient.invalidateQueries({ queryKey: ["experiment-comparison", experimentId] });
+                  
+                  setChatMessages((prev) => [...prev, {
+                    id: getNextMsgId(),
+                    role: "assistant",
+                    content: "✅ New variants are ready! Refreshing the comparison view...",
+                    timestamp: Date.now()
+                  }]);
+                  
+                  setIsPolling(false);
+                  return;
+                }
+              } catch {
+                // Keep polling on error
+              }
+            }
+            
+            // Timeout
+            setChatMessages((prev) => [...prev, {
+              id: getNextMsgId(),
+              role: "assistant",
+              content: "⚠️ Variant generation is taking longer than expected. Please refresh the page or check back shortly.",
+              timestamp: Date.now()
+            }]);
+            setIsPolling(false);
+          };
+          
+          pollForVariants();
+        } else {
+          // For other requests, explain the feature
+          const assistantMessage: ChatMessage = {
+            id: getNextMsgId(),
+            role: "assistant",
+            content: `I understand you want: "${userMessage.content}". Right now I can help you regenerate variants - just say "regenerate" or "create new variants". Custom modifications are coming soon!`,
+            timestamp: Date.now()
+          };
+          setChatMessages((prev) => [...prev, assistantMessage]);
+        }
       } catch {
         const errorMessage: ChatMessage = {
-          id: `msg-${Date.now()}`,
+          id: getNextMsgId(),
           role: "assistant",
-          content: "Sorry, I encountered an error. Please try again.",
+          content: "Sorry, I encountered an error while regenerating. Please try again or use the Regenerate button on the experiment page.",
           timestamp: Date.now()
         };
         setChatMessages((prev) => [...prev, errorMessage]);
@@ -242,7 +322,7 @@ export default function CompareVariantsPage() {
         setIsChatSending(false);
       }
     },
-    [chatInput, isChatSending]
+    [chatInput, isChatSending, experimentId, queryClient, getNextMsgId]
   );
 
   const handleClearChat = useCallback(() => {

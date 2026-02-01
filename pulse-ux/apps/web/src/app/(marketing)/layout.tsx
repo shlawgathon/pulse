@@ -3,20 +3,21 @@
  * Uses Detail.dev-inspired aesthetic.
  */
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowRight } from "lucide-react";
 
 export default function MarketingLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="dark min-h-screen bg-black text-white">
-      {/* Navigation Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-black/80 backdrop-blur-md border-b border-white/10">
-        <nav className="container mx-auto px-6 h-16 flex items-center justify-between">
+      {/* Navigation Header - Fully Transparent */}
+      <header className="fixed top-0 left-0 right-0 z-50 bg-transparent py-4">
+        <nav className="container mx-auto px-6 h-20 flex items-center justify-between">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
-              <span className="text-black font-bold text-lg">P</span>
+          <Link href="/" className="flex items-center gap-4">
+            <div className="relative w-14 h-14">
+              <Image src="/logo.png" alt="Pulse Logo" fill className="object-contain" />
             </div>
-            <span className="font-semibold text-lg">Pulse</span>
+            <span className="font-bold text-3xl font-mono tracking-tighter">PULSE</span>
           </Link>
 
           {/* Navigation Links */}
@@ -27,7 +28,7 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
             <Link href="#how-it-works" className="text-sm text-white/70 hover:text-white transition-colors">
               How It Works
             </Link>
-            <Link href="#pricing" className="text-sm text-white/70 hover:text-white transition-colors">
+            <Link href="/pricing" className="text-sm text-white/70 hover:text-white transition-colors">
               Pricing
             </Link>
           </div>

@@ -62,6 +62,7 @@ class Experiment(Document):
     winner_variant_id: Optional[str] = Field(default=None)
     base_html_snapshot: Optional[str] = Field(default=None)
     base_screenshot_url: Optional[str] = Field(default=None)
+    ai_analysis: Optional[str] = Field(default=None)  # Cached AI comparison analysis
 
     class Settings:
         name = "experiments"

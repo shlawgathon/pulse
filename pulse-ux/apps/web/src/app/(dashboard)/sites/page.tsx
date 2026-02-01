@@ -5,8 +5,8 @@
  */
 import { useState, useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
-import { useQuery } from "@tanstack/react-query";
-import { Plus, Globe, Check, Copy } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Plus, Globe, Check, Copy, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api-client";
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,9 @@ const COPY_FEEDBACK_DURATION = 2000;
 
 function SiteCard({ site }: { site: Site }) {
   const [copied, setCopied] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const queryClient = useQueryClient();
 
   // Cleanup timeout on unmount
   useEffect(() => {
@@ -28,6 +30,17 @@ function SiteCard({ site }: { site: Site }) {
       }
     };
   }, []);
+
+  const deleteSite = useMutation({
+    mutationFn: () => api.delete(`/api/v1/sites/${site.id}`),
+    onSuccess: () => {
+      toast.success(`Site "${site.name}" deleted`);
+      queryClient.invalidateQueries({ queryKey: ["sites"] });
+    },
+    onError: () => {
+      toast.error("Failed to delete site");
+    }
+  });
 
   const copyScriptTag = useCallback(async () => {
     await navigator.clipboard.writeText(site.script_tag);
@@ -41,6 +54,17 @@ function SiteCard({ site }: { site: Site }) {
     timeoutRef.current = setTimeout(() => setCopied(false), COPY_FEEDBACK_DURATION);
   }, [site.script_tag]);
 
+  const handleDelete = useCallback(() => {
+    if (confirmDelete) {
+      deleteSite.mutate();
+      setConfirmDelete(false);
+    } else {
+      setConfirmDelete(true);
+      // Reset confirmation after 3 seconds
+      setTimeout(() => setConfirmDelete(false), 3000);
+    }
+  }, [confirmDelete, deleteSite]);
+
   return (
     <div className="bg-card rounded-lg border p-4">
       <div className="flex items-start justify-between mb-3">
@@ -53,7 +77,21 @@ function SiteCard({ site }: { site: Site }) {
             <p className="text-sm text-muted-foreground">{site.domain}</p>
           </div>
         </div>
-        <ActiveStatusBadge isActive={site.is_active} />
+        <div className="flex items-center gap-2">
+          <ActiveStatusBadge isActive={site.is_active} />
+          <button
+            onClick={handleDelete}
+            disabled={deleteSite.isPending}
+            className={`p-1.5 rounded-md transition-colors ${
+              confirmDelete
+                ? "bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                : "text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+            }`}
+            title={confirmDelete ? "Click again to confirm" : "Delete site"}
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </div>
       </div>
 
       <div className="bg-muted rounded-md p-3 mb-3">

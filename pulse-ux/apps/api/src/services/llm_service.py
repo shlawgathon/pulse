@@ -35,6 +35,8 @@ class VariantGenerationResponse(BaseModel):
 
     variants: list[GeneratedVariant] = Field(..., description="List of generated variants")
     analysis: str = Field(..., description="Overall analysis of the page and opportunities")
+    email_subject: str = Field(..., description="Subject line for the notification email to the user")
+    email_body: str = Field(..., description="HTML body content for the notification email (just the inner content, no <html> wrapper)")
 
 
 class CodeChange(BaseModel):
@@ -122,37 +124,49 @@ HTML Content:
 {html}
 ```
 
+CRITICAL: Generate variants with DRAMATIC, VISUALLY OBVIOUS differences that are immediately noticeable.
+Each variant should look significantly different from the control at first glance.
+
 Generate variants that:
-1. Make meaningful UX improvements likely to increase conversions
-2. Use valid CSS selectors that will reliably target elements
-3. Focus on high-impact changes (CTAs, headlines, forms, trust signals)
-4. Are different from each other (don't just vary colors)
-5. Keep each variant focused: 3-5 patches maximum per variant
-6. NEVER hide or delete interactive components (dropdowns, accordions, toggles, menus, collapsible sections)
+1. Make BOLD, HIGH-IMPACT visual changes (not subtle tweaks)
+2. Use contrasting colors, larger sizes, different layouts
+3. Focus on the most prominent elements: main headlines, primary CTAs, hero sections
+4. Each variant should be DRAMATICALLY different from the control and from each other
+
+EXAMPLES OF DRAMATIC CHANGES (use these as inspiration):
+- Change button colors to high-contrast colors (bright green, orange, red)
+- Make CTAs 1.5x-2x larger with bold borders
+- Add eye-catching backgrounds or gradients
+- Transform flat buttons into 3D/elevated designs
+- Add urgency text like "Limited Time" or "Act Now"
+- Increase headline font sizes by 20-40%
+- Add animated elements or pulsing effects
+- Change layout orientation (horizontal to vertical or vice versa)
 
 Available patch actions:
-- style: Modify CSS properties (requires property_name)
+- style: Modify CSS properties (requires property_name) - USE THIS FOR VISUAL CHANGES
 - class_add: Add CSS classes
 - class_remove: Remove CSS classes
 - attribute: Set/modify HTML attributes (requires property_name)
-- text: Change text content
+- text: Change text content - USE THIS FOR COMPELLING COPY
 - html: Replace innerHTML (use sparingly, never on interactive elements)
-- hide: Hide element (display: none) - ONLY for non-functional decorative elements, NEVER for buttons/dropdowns/forms
+- hide: Hide element (display: none) - ONLY for non-functional decorative elements
 - show: Show element
 
-IMPORTANT: Do NOT use 'hide' action on:
-- Dropdown menus or select elements
-- Accordions or collapsible panels
-- Toggle switches or checkboxes
-- Form inputs or buttons
-- Navigation menus
-Only hide purely decorative elements that don't affect functionality.
+IMPORTANT CONSTRAINTS:
+- Do NOT use 'hide' action on interactive elements (dropdowns, forms, buttons)
+- Only hide purely decorative elements that don't affect functionality
+- Maintain dark theme if the site uses one (check CSS above)
 
 For each variant, provide:
-- A descriptive name (e.g., "Bold CTA with Urgency")
+- A descriptive name indicating the change (e.g., "Giant Green CTA" or "Urgent Red Hero")
 - A brief description (1-2 sentences max)
-- 3-5 specific DOM patches with valid CSS selectors
+- 3-6 specific DOM patches with DRAMATIC visual impact
 - Keep reasoning brief (1 sentence per patch)
+
+Also generate a personalized email notification for the user:
+- Subject: A catchy, exciting subject line about the new experiment (e.g., "Experiment Ready: 20% more clicks?")
+- Body: A friendly, professional message explaining the core optimization strategy. Use HTML tags (<p>, <strong>, <ul>) but NO <html>/<body> wrappers. Mention specific improvements.
 
 Generate {num_variants} distinct variants plus a brief (2-3 sentence) analysis."""
 

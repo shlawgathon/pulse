@@ -345,6 +345,7 @@ class ExperimentService:
 
         # Set status back to draft while regenerating
         experiment.status = ExperimentStatus.DRAFT
+        experiment.ai_analysis = None  # Clear cached analysis for new variants
         experiment.updated_at = datetime.utcnow()
         await experiment.save()
 
@@ -443,12 +444,19 @@ class ExperimentService:
             Variant.experiment_id == experiment_id
         ).to_list()
 
-        # Generate AI analysis
-        ai_analysis = None
-        try:
-            ai_analysis = await generate_comparison_analysis(experiment_id)
-        except Exception as e:
-            logger.warning(f"Failed to generate AI analysis: {e}")
+        # Use cached AI analysis or generate and cache it
+        ai_analysis = experiment.ai_analysis
+        if ai_analysis is None and len(variants) >= 2:
+            try:
+                ai_analysis = await generate_comparison_analysis(experiment_id)
+                if ai_analysis:
+                    # Cache it on the experiment
+                    experiment.ai_analysis = ai_analysis
+                    experiment.updated_at = datetime.utcnow()
+                    await experiment.save()
+                    logger.info(f"Cached AI analysis for experiment {experiment_id}")
+            except Exception as e:
+                logger.warning(f"Failed to generate AI analysis: {e}")
 
         return (experiment, variants, ai_analysis)
 
