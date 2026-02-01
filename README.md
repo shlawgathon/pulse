@@ -34,7 +34,7 @@ Instead of just telling you what's wrong, Pulse **generates code** to fix it. It
 |-------|------------|
 | **Frontend** | Next.js 16, TailwindCSS, shadcn/ui |
 | **Backend** | FastAPI, Python 3.12 |
-| **AI Engine** | Claude 3.5 Sonnet / Opus (via OpenRouter) |
+| **AI Engine** | Claude 3.5 Sonnet / Kimi k2.5 (via OpenRouter) |
 | **Data** | MongoDB Atlas, Firecrawl |
 
 ## 🚀 Quick Start
