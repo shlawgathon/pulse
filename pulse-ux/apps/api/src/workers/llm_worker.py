@@ -101,6 +101,12 @@ async def generate_variants_for_experiment(
         if experiment:
             experiment.status = ExperimentStatus.PENDING
             experiment.updated_at = datetime.utcnow()
+            # Clear any previous error descriptions
+            if experiment.description and (
+                experiment.description.startswith("Variant generation failed") or
+                experiment.description.startswith("[Generation Failed")
+            ):
+                experiment.description = None
             await experiment.save()
 
             # Send email notification to creator

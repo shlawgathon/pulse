@@ -83,8 +83,11 @@ function ExperimentCard({
           <StatusBadge status={displayStatus} />
         </div>
 
-        {experiment.description && (
+        {experiment.description && !experiment.description.toLowerCase().includes("failed") && (
           <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{experiment.description}</p>
+        )}
+        {isFailed && experiment.description && (
+          <p className="text-sm text-destructive mb-3 line-clamp-2">{experiment.description}</p>
         )}
 
         <div className="flex items-center gap-4 text-xs text-muted-foreground">

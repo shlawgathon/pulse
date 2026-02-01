@@ -8,6 +8,7 @@
 import { useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { ChevronDown, FlaskConical, Globe, Settings, Mail, LogOut } from "lucide-react";
 import { clearTokens } from "@/lib/api-client";
@@ -46,10 +47,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* Header with org switcher */}
         <div className="h-16 border-b border-sidebar-border flex items-center px-4">
           <button className="flex items-center gap-2 w-full text-left hover:bg-sidebar-accent rounded-md px-2 py-1.5">
-            <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
-              <span className="text-primary-foreground font-bold">P</span>
-            </div>
-            <span className="font-medium truncate flex-1">My Organization</span>
+            <Image
+              src="/pulse-icon.png"
+              alt="Pulse"
+              width={32}
+              height={32}
+              className="rounded-md"
+            />
+            <span className="font-medium truncate flex-1">Pulse</span>
             <ChevronDown className="h-4 w-4 text-muted-foreground" />
           </button>
         </div>
