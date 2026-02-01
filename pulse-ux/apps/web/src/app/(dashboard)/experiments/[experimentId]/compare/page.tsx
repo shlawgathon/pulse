@@ -449,9 +449,7 @@ export default function CompareVariantsPage() {
             <MessageSquare className="h-4 w-4 text-muted-foreground" />
             <span className="font-medium text-sm">Modification Chat</span>
             {chatMessages.length > 0 && (
-              <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
-                {chatMessages.length}
-              </span>
+              <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">{chatMessages.length}</span>
             )}
           </div>
           <div className="flex items-center gap-2">
