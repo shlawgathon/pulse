@@ -1,0 +1,11 @@
+{
+  "session_id": "test-123",
+  "events": [
+    {
+      "type": 1,
+      "data": {}
+    }
+  ],
+  "last_updated": "2026-02-01T02:03:13.502339",
+  "event_count": 1
+}

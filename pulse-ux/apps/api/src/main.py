@@ -10,10 +10,12 @@ This module configures the FastAPI application with:
 
 import logging
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import AsyncGenerator
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from src.config import settings
 from src.database import init_db, close_db
@@ -66,6 +68,22 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Mount static files directory for actuator.js
+STATIC_DIR = Path(__file__).parent.parent / "static"
+if STATIC_DIR.exists():
+    app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
+
+# Serve actuator.js at root level
+@app.get("/actuator.js", include_in_schema=False)
+async def serve_actuator():
+    """Serve actuator.js script."""
+    from fastapi.responses import FileResponse
+    actuator_path = STATIC_DIR / "actuator.js"
+    if actuator_path.exists():
+        return FileResponse(actuator_path, media_type="application/javascript")
+    from fastapi import HTTPException
+    raise HTTPException(status_code=404, detail="actuator.js not found")
 
 # Health check endpoint
 @app.get("/health", tags=["Health"])
@@ -80,13 +98,14 @@ async def health_check() -> dict[str, str]:
 
 
 # Import and register routers
-from src.routers import auth, sites, experiments, actuator, pull_requests
+from src.routers import auth, sites, experiments, actuator, pull_requests, queue
 
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["Authentication"])
 app.include_router(sites.router, prefix="/api/v1/sites", tags=["Sites"])
 app.include_router(experiments.router, prefix="/api/v1/experiments", tags=["Experiments"])
 app.include_router(actuator.router, prefix="/api/v1/actuator", tags=["Actuator"])
 app.include_router(pull_requests.router, prefix="/api/v1/pull-requests", tags=["Pull Requests"])
+app.include_router(queue.router, prefix="/api/queue", tags=["Queue"])
 
 
 # Root endpoint

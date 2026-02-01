@@ -14,21 +14,36 @@ Pulse UX Optimizer enables developers and product teams to:
 6. **Choose winning variants** through an intuitive dashboard interface
 7. **Generate Pull Requests** automatically to codify the winning variant into the codebase
 
+## How It Works
+
+```mermaid
+flowchart LR
+    A["Customer<br/>Website"] -->|"1-line script"| B["Pulse UX<br/>AI Engine"]
+    B -->|"Auto-generates"| C["A/B Test<br/>Variants"]
+    C -->|"Measures"| D["Winner<br/>PR"]
+    D -->|"Increases"| E["+15-30%<br/>Conversions"]
+```
+
+**Zero-code. AI-powered. Measurable ROI.**
+
 ## Tech Stack
 
 ### Frontend
+
 - Next.js 16 with App Router
 - React 19
 - shadcn/ui + Tailwind CSS 4
 - Zustand + TanStack Query
 
 ### Backend
+
 - FastAPI (Python 3.12)
 - MongoDB Atlas + Beanie ODM
 - Redis for caching and job queues
 - uv package manager
 
 ### External Services
+
 - Firecrawl (DOM scraping)
 - OpenRouter (LLM - Kimi K2.5)
 - Resend (email notifications)
