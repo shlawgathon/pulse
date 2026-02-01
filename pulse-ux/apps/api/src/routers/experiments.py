@@ -13,6 +13,8 @@ Endpoints:
 - GET /{experiment_id}/comparison: Get side-by-side comparison data
 """
 
+from datetime import datetime
+
 from fastapi import APIRouter, HTTPException, status, Depends, Query
 from pydantic import BaseModel, Field
 
@@ -20,6 +22,7 @@ from src.dependencies import get_current_user
 from src.models.user import User
 from src.models.experiment import ExperimentStatus
 from src.services.experiment_service import experiment_service
+from src.services.recording_service import recording_service
 
 router = APIRouter()
 
@@ -82,6 +85,36 @@ class CompleteRequest(BaseModel):
     """Request body for completing an experiment."""
 
     winner_variant_id: str = Field(..., description="ID of the winning variant")
+
+
+class SessionRecordingListItem(BaseModel):
+    """Summary of a session recording."""
+
+    id: str
+    session_id: str
+    visitor_id: str
+    variant_id: str
+    url: str
+    duration_ms: int
+    events_count: int
+    started_at: datetime
+    is_complete: bool
+
+
+class SessionRecordingDetail(BaseModel):
+    """Full session recording with events."""
+
+    id: str
+    session_id: str
+    visitor_id: str
+    variant_id: str
+    url: str
+    events: list[dict]
+    duration_ms: int
+    events_count: int
+    started_at: datetime
+    ended_at: datetime | None
+    is_complete: bool
 
 
 @router.post("/", response_model=ExperimentResponse, status_code=status.HTTP_202_ACCEPTED)
@@ -536,4 +569,112 @@ async def get_comparison(
             for v in variants
         ],
         ai_analysis=ai_analysis,
+    )
+
+
+@router.get("/{experiment_id}/recordings", response_model=list[SessionRecordingListItem])
+async def list_recordings(
+    experiment_id: str,
+    current_user: User = Depends(get_current_user),
+    skip: int = Query(0, ge=0, description="Number of records to skip"),
+    limit: int = Query(20, ge=1, le=100, description="Maximum records to return"),
+    variant_id: str | None = Query(None, description="Filter by variant"),
+) -> list[SessionRecordingListItem]:
+    """
+    List session recordings for an experiment.
+
+    Args:
+        experiment_id: The experiment's ID.
+        current_user: The authenticated user.
+        skip: Pagination offset.
+        limit: Maximum number of recordings.
+        variant_id: Optional variant filter.
+
+    Returns:
+        List of recording summaries.
+
+    Raises:
+        HTTPException: If experiment not found.
+    """
+    # Verify user has access to the experiment
+    experiment = await experiment_service.get_experiment(
+        experiment_id=experiment_id,
+        user_id=str(current_user.id),
+    )
+
+    if experiment is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Experiment not found")
+
+    recordings = await recording_service.get_recordings_for_experiment(
+        experiment_id=experiment_id,
+        skip=skip,
+        limit=limit,
+        variant_id=variant_id,
+    )
+
+    return [
+        SessionRecordingListItem(
+            id=r["id"],
+            session_id=r["session_id"],
+            visitor_id=r["visitor_id"],
+            variant_id=r["variant_id"],
+            url=r["url"],
+            duration_ms=r["duration_ms"],
+            events_count=r["events_count"],
+            started_at=r["started_at"],
+            is_complete=r["is_complete"],
+        )
+        for r in recordings
+    ]
+
+
+@router.get("/{experiment_id}/recordings/{recording_id}", response_model=SessionRecordingDetail)
+async def get_recording(
+    experiment_id: str,
+    recording_id: str,
+    current_user: User = Depends(get_current_user),
+) -> SessionRecordingDetail:
+    """
+    Get full session recording with events for playback.
+
+    Args:
+        experiment_id: The experiment's ID.
+        recording_id: The recording's ID.
+        current_user: The authenticated user.
+
+    Returns:
+        Full recording with events.
+
+    Raises:
+        HTTPException: If experiment or recording not found.
+    """
+    # Verify user has access to the experiment
+    experiment = await experiment_service.get_experiment(
+        experiment_id=experiment_id,
+        user_id=str(current_user.id),
+    )
+
+    if experiment is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Experiment not found")
+
+    recording = await recording_service.get_recording_by_id(
+        recording_id=recording_id,
+        experiment_id=experiment_id,
+    )
+
+    if recording is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Recording not found")
+
+    return SessionRecordingDetail(
+        id=recording["id"],
+        session_id=recording["session_id"],
+        visitor_id=recording["visitor_id"],
+        variant_id=recording["variant_id"],
+        url=recording["url"],
+        events=recording["events"],
+        duration_ms=recording["duration_ms"],
+        events_count=recording["events_count"],
+        started_at=recording["started_at"],
+        ended_at=recording["ended_at"],
+        is_complete=recording["is_complete"],
     )

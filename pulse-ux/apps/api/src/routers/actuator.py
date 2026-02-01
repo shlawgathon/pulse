@@ -10,10 +10,14 @@ Endpoints:
 - POST /track/conversion: Track conversion events
 """
 
+from typing import Any
+
 from fastapi import APIRouter, HTTPException, Header, status
 from pydantic import BaseModel, Field
 
 from src.services.actuator_service import actuator_service
+from src.services.recording_service import recording_service
+from src.models.site import Site
 
 router = APIRouter()
 
@@ -69,6 +73,19 @@ class ConversionRequest(BaseModel):
     variant_id: str = Field(..., description="Variant ID")
     event_name: str | None = Field("conversion", description="Event name")
     metadata: dict | None = Field(None, description="Additional event data")
+
+
+class RecordingUploadRequest(BaseModel):
+    """Session recording upload request."""
+
+    session_id: str = Field(..., min_length=1, max_length=100, description="Unique session identifier")
+    visitor_id: str = Field(..., min_length=1, max_length=100, description="Visitor's unique identifier")
+    experiment_id: str = Field(..., description="Experiment ID")
+    variant_id: str = Field(..., description="Variant ID")
+    url: str = Field(..., max_length=2000, description="Page URL")
+    events: list[dict[str, Any]] = Field(..., max_length=1000, description="rrweb events array (max 1000 per batch)")
+    is_final: bool = Field(False, description="Whether this is the final batch")
+    user_agent: str | None = Field(None, max_length=500, description="Visitor's user agent")
 
 
 @router.post("/assign", response_model=AssignResponse)
@@ -170,4 +187,39 @@ async def track_conversion(
         variant_id=request.variant_id,
         event_name=request.event_name,
         metadata=request.metadata,
+    )
+
+
+@router.post("/recording", status_code=status.HTTP_204_NO_CONTENT)
+async def upload_recording(
+    request: RecordingUploadRequest,
+    x_public_key: str | None = Header(None, alias="X-Public-Key"),
+) -> None:
+    """
+    Upload session recording events.
+
+    Called by the actuator script to upload rrweb events.
+    Supports batched uploads and final flush on page unload.
+
+    Args:
+        request: Recording data with rrweb events.
+        x_public_key: Site's public key (optional for beacon requests).
+    """
+    # Look up site to get site_id (if public key provided)
+    site_id = ""
+    if x_public_key:
+        site = await Site.find_one(Site.public_key == x_public_key)
+        if site:
+            site_id = str(site.id)
+
+    await recording_service.save_recording_events(
+        session_id=request.session_id,
+        visitor_id=request.visitor_id,
+        experiment_id=request.experiment_id,
+        variant_id=request.variant_id,
+        site_id=site_id,
+        url=request.url,
+        events=request.events,
+        is_final=request.is_final,
+        user_agent=request.user_agent,
     )

@@ -63,6 +63,7 @@ async def init_db() -> None:
     from src.models.variant import Variant
     from src.models.assignment import Assignment
     from src.models.pull_request import PullRequest
+    from src.models.session_recording import SessionRecording
 
     # Initialize Beanie with all document models
     await init_beanie(
@@ -75,6 +76,7 @@ async def init_db() -> None:
             Variant,
             Assignment,
             PullRequest,
+            SessionRecording,
         ],
     )
     

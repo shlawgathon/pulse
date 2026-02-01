@@ -238,12 +238,7 @@ function injectDarkMode(html: string): string {
 /**
  * Injects the patch script into the HTML just before </body>.
  */
-function injectPatchScript(
-  html: string, 
-  patches: DOMPatch[], 
-  targetUrl?: string,
-  scrollSyncId?: string
-): string {
+function injectPatchScript(html: string, patches: DOMPatch[], targetUrl?: string, scrollSyncId?: string): string {
   // First inject base tag to fix relative URLs
   let processedHtml = injectBaseTag(html, targetUrl);
 
@@ -252,11 +247,11 @@ function injectPatchScript(
 
   // Build scripts to inject
   let scripts = "";
-  
+
   if (patches.length > 0) {
     scripts += generatePatchScript(patches);
   }
-  
+
   if (scrollSyncId) {
     scripts += generateScrollSyncScript(scrollSyncId);
   }
@@ -292,45 +287,38 @@ interface VariantPreviewProps {
  * VariantPreview renders the base HTML with DOM patches applied in a sandboxed iframe.
  * This allows users to see a live preview of how each variant would look.
  */
-export const VariantPreview = forwardRef<HTMLIFrameElement, VariantPreviewProps>(
-  function VariantPreview(
-    { baseHtml, variant, targetUrl, className = "", enableScrollSync = false, scrollSyncId },
-    ref
-  ) {
-    const iframeRef = useRef<HTMLIFrameElement>(null);
+export const VariantPreview = forwardRef<HTMLIFrameElement, VariantPreviewProps>(function VariantPreview(
+  { baseHtml, variant, targetUrl, className = "", enableScrollSync = false, scrollSyncId },
+  ref
+) {
+  const iframeRef = useRef<HTMLIFrameElement>(null);
 
-    // Expose the iframe ref to parent
-    useImperativeHandle(ref, () => iframeRef.current as HTMLIFrameElement);
+  // Expose the iframe ref to parent
+  useImperativeHandle(ref, () => iframeRef.current as HTMLIFrameElement);
 
-    // Memoize the patched HTML to avoid recalculating on every render
-    const patchedHtml = useMemo(() => {
-      return injectPatchScript(
-        baseHtml, 
-        variant.patches, 
-        targetUrl,
-        enableScrollSync ? scrollSyncId : undefined
-      );
-    }, [baseHtml, variant.patches, targetUrl, enableScrollSync, scrollSyncId]);
+  // Memoize the patched HTML to avoid recalculating on every render
+  const patchedHtml = useMemo(() => {
+    return injectPatchScript(baseHtml, variant.patches, targetUrl, enableScrollSync ? scrollSyncId : undefined);
+  }, [baseHtml, variant.patches, targetUrl, enableScrollSync, scrollSyncId]);
 
-    useEffect(() => {
-      const iframe = iframeRef.current;
-      if (!iframe) return;
+  useEffect(() => {
+    const iframe = iframeRef.current;
+    if (!iframe) return;
 
-      // Use srcdoc for security (sandboxed content)
-      iframe.srcdoc = patchedHtml;
-    }, [patchedHtml]);
+    // Use srcdoc for security (sandboxed content)
+    iframe.srcdoc = patchedHtml;
+  }, [patchedHtml]);
 
-    return (
-      <iframe
-        ref={iframeRef}
-        title={`Preview of ${variant.name}`}
-        className={`w-full h-full border-0 bg-white ${className}`}
-        sandbox="allow-scripts allow-same-origin"
-        loading="lazy"
-      />
-    );
-  }
-);
+  return (
+    <iframe
+      ref={iframeRef}
+      title={`Preview of ${variant.name}`}
+      className={`w-full h-full border-0 bg-white ${className}`}
+      sandbox="allow-scripts allow-same-origin"
+      loading="lazy"
+    />
+  );
+});
 
 /**
  * Simple fallback component when no HTML is available

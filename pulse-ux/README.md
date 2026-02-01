@@ -6,11 +6,13 @@ AI-powered UX optimization platform with automated A/B testing.
 
 Pulse UX Optimizer enables developers and product teams to:
 
-1. **Generate UX variants** using Claude Opus 4.5, informed by live DOM scraping via Firecrawl
+1. **Generate UX variants** using LLM (Kimi K2.5 via OpenRouter), informed by live DOM scraping via Firecrawl
 2. **Deploy runtime experiments** without code deployments using an injected "actuator" script
-3. **Compare variants side-by-side** with visual diff rendering and AI-generated insights
-4. **Choose winning variants** through an intuitive dashboard interface
-5. **Generate Pull Requests** automatically to codify the winning variant into the codebase
+3. **Record user sessions** automatically via rrweb for qualitative analysis
+4. **Compare variants side-by-side** with visual diff rendering and AI-generated insights
+5. **Watch session replays** to understand user behavior per variant
+6. **Choose winning variants** through an intuitive dashboard interface
+7. **Generate Pull Requests** automatically to codify the winning variant into the codebase
 
 ## Tech Stack
 
@@ -28,9 +30,10 @@ Pulse UX Optimizer enables developers and product teams to:
 
 ### External Services
 - Firecrawl (DOM scraping)
-- OpenRouter (Claude Opus 4.5)
+- OpenRouter (LLM - Kimi K2.5)
 - Resend (email notifications)
 - GitHub API (PR creation)
+- rrweb (session recording & replay)
 
 ## Project Structure
 

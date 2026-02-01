@@ -6,6 +6,7 @@ from src.models.experiment import Experiment, ExperimentStatus
 from src.models.variant import Variant, DOMPatch, PatchAction
 from src.models.assignment import Assignment
 from src.models.pull_request import PullRequest, PRStatus
+from src.models.session_recording import SessionRecording
 
 __all__ = [
     "User",
@@ -19,4 +20,5 @@ __all__ = [
     "Assignment",
     "PullRequest",
     "PRStatus",
+    "SessionRecording",
 ]

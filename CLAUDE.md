@@ -70,8 +70,9 @@ pulse-ux/
 ### Data Flow
 
 1. **Experiment Creation**: User submits target URL → Firecrawl scrapes DOM → LLM generates variants → Variants stored in MongoDB
-2. **Runtime Testing**: Actuator script fetches assignments from `/api/v1/actuator/assign` → Applies DOM patches → Tracks impressions/conversions
-3. **PR Generation**: User selects winner → LLM transforms patches to code → GitHub API creates branch and PR
+2. **Runtime Testing**: Actuator script fetches assignments from `/api/v1/actuator/assign` → Applies DOM patches → Tracks impressions/conversions → Records session via rrweb
+3. **Session Replay**: rrweb events uploaded to `/api/v1/actuator/recording` → Stored in MongoDB → Viewable in dashboard
+4. **PR Generation**: User selects winner → LLM transforms patches to code → GitHub API creates branch and PR
 
 ### Key External Services
 
@@ -79,6 +80,7 @@ pulse-ux/
 - **OpenRouter**: LLM for variant generation (`src/integrations/openrouter.py`) - Currently using `moonshotai/kimi-k2.5` model
 - **GitHub**: PR creation (`src/integrations/github.py`)
 - **Resend**: Email notifications (`src/integrations/resend.py`)
+- **rrweb**: Session recording (loaded dynamically via CDN in actuator script)
 
 ## API Routes
 
@@ -87,7 +89,13 @@ All routes are prefixed with `/api/v1`:
 - `/auth/*` - JWT authentication with refresh tokens, Google OAuth
 - `/sites/*` - Site registration and management
 - `/experiments/*` - Experiment CRUD and lifecycle
+  - `GET /{id}/recordings` - List session recordings
+  - `GET /{id}/recordings/{recording_id}` - Get recording with rrweb events
 - `/actuator/*` - Public endpoints for client script (no auth required)
+  - `POST /assign` - Get variant assignments
+  - `POST /track/impression` - Track impressions
+  - `POST /track/conversion` - Track conversions
+  - `POST /recording` - Upload rrweb session recording events
 - `/pull-requests/*` - PR generation and status
 
 Health check: `GET /health`
@@ -108,6 +116,7 @@ MongoDB documents in `apps/api/src/models/`:
 - `Experiment` - A/B test definitions with status lifecycle
 - `Variant` - Control and treatment variants with DOM patches (`DOMPatch`, `PatchAction`)
 - `Assignment` - Visitor-to-variant sticky bucketing
+- `SessionRecording` - rrweb session recordings with events, duration, and visitor metadata
 - `PullRequest` - Generated PR tracking (`PRStatus`)
 
 ## Environment Setup
@@ -137,3 +146,4 @@ Copy `.env.example` to `.env.local`:
 | Package Manager | bun | 1.3.8 |
 | Python Manager | uv | - |
 | LLM | OpenRouter (Kimi K2.5) | - |
+| Session Replay | rrweb + rrweb-player | 2.0.0-alpha |
