@@ -262,47 +262,47 @@ export default function CompareVariantsPage() {
   }
 
   return (
-    <div className="p-6 h-[calc(100vh-4rem)] flex flex-col">
-      {/* Header */}
-      <div className="flex-shrink-0 pb-4 border-b">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-semibold">Compare Variants</h1>
-            <p className="text-sm text-muted-foreground">{comparison.experiment.name}</p>
-          </div>
-          <div className="flex items-center gap-4">
-            <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
-              <input
-                type="checkbox"
-                checked={syncScroll}
-                onChange={handleSyncScrollChange}
-                className="rounded border-input text-primary focus:ring-primary"
-                aria-label="Synchronize scroll between panels"
-              />
-              Sync scroll
-            </label>
-            <Button variant="outline" onClick={handleBack}>
-              Back
-            </Button>
+    <div className="h-[calc(100vh-4rem)] flex flex-col">
+      {/* Main scrollable content */}
+      <div className="flex-1 overflow-auto p-6 pb-20">
+        {/* Header */}
+        <div className="pb-4 border-b">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-xl font-semibold">Compare Variants</h1>
+              <p className="text-sm text-muted-foreground">{comparison.experiment.name}</p>
+            </div>
+            <div className="flex items-center gap-4">
+              <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={syncScroll}
+                  onChange={handleSyncScrollChange}
+                  className="rounded border-input text-primary focus:ring-primary"
+                  aria-label="Synchronize scroll between panels"
+                />
+                Sync scroll
+              </label>
+              <Button variant="outline" onClick={handleBack}>
+                Back
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* AI Analysis */}
-      {comparison.ai_analysis && (
-        <div className="flex-shrink-0 my-4 rounded-lg bg-muted/50 border p-4">
-          <p className="text-xs font-medium text-muted-foreground uppercase mb-2">AI Analysis</p>
-          <p className="text-sm">{comparison.ai_analysis}</p>
-        </div>
-      )}
+        {/* AI Analysis */}
+        {comparison.ai_analysis && (
+          <div className="my-4 rounded-lg bg-muted/50 border p-4">
+            <p className="text-xs font-medium text-muted-foreground uppercase mb-2">AI Analysis</p>
+            <p className="text-sm">{comparison.ai_analysis}</p>
+          </div>
+        )}
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-h-0 gap-4">
         {/* Comparison Grid */}
-        <div className={`grid grid-cols-2 gap-4 ${chatExpanded ? "flex-1" : "flex-[2]"} min-h-0`}>
+        <div className="grid grid-cols-2 gap-4 mt-4">
           {/* Left Panel */}
-          <div className="flex flex-col min-h-0">
-            <div className="flex-shrink-0 mb-3">
+          <div className="flex flex-col">
+            <div className="mb-3">
               <Select value={selectedVariants[0]} onValueChange={handleLeftVariantChange}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select variant" />
@@ -319,7 +319,7 @@ export default function CompareVariantsPage() {
 
             {leftVariant && (
               <>
-                <div className="flex-shrink-0 mb-3 flex items-center justify-between">
+                <div className="mb-3 flex items-center justify-between">
                   <div>
                     <span className="text-2xl font-semibold">{getConversionRate(leftVariant)}</span>
                     <span className="ml-2 text-sm text-muted-foreground">
@@ -337,14 +337,14 @@ export default function CompareVariantsPage() {
                   )}
                 </div>
 
-                <div className="flex-1 overflow-hidden rounded-lg border bg-card">
+                <div className="overflow-hidden rounded-lg border bg-card h-[500px]">
                   {comparison.experiment.base_html_snapshot ? (
                     <VariantPreview
                       ref={leftIframeRef}
                       baseHtml={comparison.experiment.base_html_snapshot}
                       variant={leftVariant}
                       targetUrl={comparison.experiment.target_url}
-                      className="min-h-[400px]"
+                      className="h-full"
                       enableScrollSync
                       scrollSyncId="left"
                     />
@@ -368,8 +368,8 @@ export default function CompareVariantsPage() {
           </div>
 
           {/* Right Panel */}
-          <div className="flex flex-col min-h-0">
-            <div className="flex-shrink-0 mb-3">
+          <div className="flex flex-col">
+            <div className="mb-3">
               <Select value={selectedVariants[1]} onValueChange={handleRightVariantChange}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select variant" />
@@ -386,7 +386,7 @@ export default function CompareVariantsPage() {
 
             {rightVariant && (
               <>
-                <div className="flex-shrink-0 mb-3 flex items-center justify-between">
+                <div className="mb-3 flex items-center justify-between">
                   <div>
                     <span className="text-2xl font-semibold">{getConversionRate(rightVariant)}</span>
                     <span className="ml-2 text-sm text-muted-foreground">
@@ -404,14 +404,14 @@ export default function CompareVariantsPage() {
                   )}
                 </div>
 
-                <div className="flex-1 overflow-hidden rounded-lg border bg-card">
+                <div className="overflow-hidden rounded-lg border bg-card h-[500px]">
                   {comparison.experiment.base_html_snapshot ? (
                     <VariantPreview
                       ref={rightIframeRef}
                       baseHtml={comparison.experiment.base_html_snapshot}
                       variant={rightVariant}
                       targetUrl={comparison.experiment.target_url}
-                      className="min-h-[400px]"
+                      className="h-full"
                       enableScrollSync
                       scrollSyncId="right"
                     />
@@ -434,91 +434,91 @@ export default function CompareVariantsPage() {
             )}
           </div>
         </div>
+      </div>
 
-        {/* Chat Section */}
+      {/* Fixed Chat Section at Bottom */}
+      <div
+        className={`fixed bottom-0 left-64 right-0 border-t bg-background shadow-lg transition-all duration-300 z-50 ${chatExpanded ? "h-80" : "h-14"}`}
+      >
+        {/* Chat Header */}
         <div
-          className={`flex-shrink-0 border rounded-lg bg-card transition-all duration-300 ${chatExpanded ? "flex-1 min-h-[200px]" : "h-14"}`}
+          className="flex items-center justify-between px-4 py-3 border-b cursor-pointer hover:bg-muted/50"
+          onClick={() => setChatExpanded(!chatExpanded)}
         >
-          {/* Chat Header */}
-          <div
-            className="flex items-center justify-between px-4 py-3 border-b cursor-pointer hover:bg-muted/50"
-            onClick={() => setChatExpanded(!chatExpanded)}
-          >
-            <div className="flex items-center gap-2">
-              <MessageSquare className="h-4 w-4 text-muted-foreground" />
-              <span className="font-medium text-sm">Modification Chat</span>
-              {chatMessages.length > 0 && (
-                <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
-                  {chatMessages.length}
-                </span>
-              )}
-            </div>
-            <div className="flex items-center gap-2">
-              {chatMessages.length > 0 && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleClearChat();
-                  }}
-                >
-                  Clear
-                </Button>
-              )}
-              <span className="text-xs text-muted-foreground">
-                {chatExpanded ? "Click to collapse" : "Click to expand"}
+          <div className="flex items-center gap-2">
+            <MessageSquare className="h-4 w-4 text-muted-foreground" />
+            <span className="font-medium text-sm">Modification Chat</span>
+            {chatMessages.length > 0 && (
+              <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                {chatMessages.length}
               </span>
-            </div>
+            )}
           </div>
-
-          {/* Chat Content */}
-          {chatExpanded && (
-            <div className="flex flex-col h-[calc(100%-48px)]">
-              {/* Messages */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                {chatMessages.length === 0 ? (
-                  <div className="text-center text-sm text-muted-foreground py-8">
-                    <p>Describe modifications you&apos;d like to make to the variants.</p>
-                    <p className="text-xs mt-1">
-                      e.g., &quot;Make the CTA button larger&quot; or &quot;Change the headline to be more urgent&quot;
-                    </p>
-                  </div>
-                ) : (
-                  chatMessages.map((msg) => (
-                    <div key={msg.id} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-                      <div
-                        className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${
-                          msg.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted"
-                        }`}
-                      >
-                        {msg.content}
-                      </div>
-                    </div>
-                  ))
-                )}
-                <div ref={chatEndRef} />
-              </div>
-
-              {/* Input */}
-              <form onSubmit={handleChatSubmit} className="flex-shrink-0 border-t p-3">
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={chatInput}
-                    onChange={(e) => setChatInput(e.target.value)}
-                    placeholder="Describe your modification..."
-                    className="flex-1 rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                    disabled={isChatSending}
-                  />
-                  <Button type="submit" size="sm" disabled={!chatInput.trim() || isChatSending}>
-                    {isChatSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                  </Button>
-                </div>
-              </form>
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            {chatMessages.length > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleClearChat();
+                }}
+              >
+                Clear
+              </Button>
+            )}
+            <span className="text-xs text-muted-foreground">
+              {chatExpanded ? "Click to collapse" : "Click to expand"}
+            </span>
+          </div>
         </div>
+
+        {/* Chat Content */}
+        {chatExpanded && (
+          <div className="flex flex-col h-[calc(100%-48px)]">
+            {/* Messages */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              {chatMessages.length === 0 ? (
+                <div className="text-center text-sm text-muted-foreground py-8">
+                  <p>Describe modifications you&apos;d like to make to the variants.</p>
+                  <p className="text-xs mt-1">
+                    e.g., &quot;Make the CTA button larger&quot; or &quot;Change the headline to be more urgent&quot;
+                  </p>
+                </div>
+              ) : (
+                chatMessages.map((msg) => (
+                  <div key={msg.id} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+                    <div
+                      className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${
+                        msg.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted"
+                      }`}
+                    >
+                      {msg.content}
+                    </div>
+                  </div>
+                ))
+              )}
+              <div ref={chatEndRef} />
+            </div>
+
+            {/* Input */}
+            <form onSubmit={handleChatSubmit} className="flex-shrink-0 border-t p-3">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  placeholder="Describe your modification..."
+                  className="flex-1 rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  disabled={isChatSending}
+                />
+                <Button type="submit" size="sm" disabled={!chatInput.trim() || isChatSending}>
+                  {isChatSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                </Button>
+              </div>
+            </form>
+          </div>
+        )}
       </div>
     </div>
   );
