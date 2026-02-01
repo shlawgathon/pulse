@@ -1,1 +1,341 @@
-(()=>{var{defineProperty:j,getOwnPropertyNames:A,getOwnPropertyDescriptor:S}=Object,_=Object.prototype.hasOwnProperty;var T=new WeakMap,y=(q)=>{var J=T.get(q),Q;if(J)return J;if(J=j({},"__esModule",{value:!0}),q&&typeof q==="object"||typeof q==="function")A(q).map((W)=>!_.call(J,W)&&j(J,W,{get:()=>q[W],enumerable:!(Q=S(q,W))||Q.enumerable}));return T.set(q,J),J};var C=(q,J)=>{for(var Q in J)j(q,Q,{get:J[Q],enumerable:!0,configurable:!0,set:(W)=>J[Q]=()=>W})};var d={};C(d,{PulseUX:()=>X});var Z=null,D=null,B=[],z=!1,k=null,H=[],O=null,G=null,F=50,P=1e4,V=500;function N(){let q=Date.now().toString(36),J=Math.random().toString(36).substring(2,15);return`${q}-${J}`}function U(){let q=Date.now().toString(36),J=Math.random().toString(36).substring(2,15);return`s-${q}-${J}`}function M(){if(D)return D;try{if(D=localStorage.getItem("pulse_visitor_id"),!D)D=N(),localStorage.setItem("pulse_visitor_id",D)}catch{D=N()}return D}function E(q){try{let J=`pulse_assignments_${btoa(q).slice(0,32)}`,Q=localStorage.getItem(J);if(Q){let W=JSON.parse(Q);if(W.timestamp&&Date.now()-W.timestamp<300000)return W.assignments}}catch{}return null}function R(q,J){try{let Q=`pulse_assignments_${btoa(q).slice(0,32)}`;localStorage.setItem(Q,JSON.stringify({assignments:J,timestamp:Date.now()}))}catch{}}function Y(...q){if(Z?.debug)console.log("[Pulse UX]",...q)}function b(q){try{let J=document.querySelectorAll(q.selector);if(J.length===0)return Y(`No elements found for selector: ${q.selector}`),!1;return J.forEach((Q)=>{let W=Q;switch(q.action){case"style":if(q.property_name)W.style.setProperty(q.property_name,q.value);break;case"class_add":W.classList.add(...q.value.split(" ").filter(Boolean));break;case"class_remove":W.classList.remove(...q.value.split(" ").filter(Boolean));break;case"attribute":if(q.property_name)W.setAttribute(q.property_name,q.value);break;case"text":W.textContent=q.value;break;case"html":W.innerHTML=q.value;break;case"hide":W.style.display="none";break;case"show":W.style.display="";break;default:Y(`Unknown patch action: ${q.action}`)}}),Y(`Applied patch: ${q.action} on ${q.selector}`),!0}catch(J){return Y("Error applying patch:",J),!1}}function K(){if(B.length===0){Y("No assignments to apply");return}B.forEach((q)=>{if(q.is_control){Y(`Variant ${q.variant_id} is control, no patches`);return}Y(`Applying ${q.patches.length} patches for variant ${q.variant_id}`),q.patches.forEach(b)})}async function f(){if(!Z)throw Error("Pulse not initialized");let q=Z.apiUrl||"https://api.pulse-ux.com",J=window.location.href,Q=M(),W=E(J);if(W)return Y("Using cached assignments"),W;try{let $=await fetch(`${q}/api/v1/actuator/assign`,{method:"POST",headers:{"Content-Type":"application/json","X-Public-Key":Z.publicKey},body:JSON.stringify({visitor_id:Q,url:J,user_agent:navigator.userAgent,referrer:document.referrer||void 0})});if(!$.ok)throw Error(`HTTP ${$.status}`);let x=await $.json();if(x.visitor_id&&x.visitor_id!==Q){D=x.visitor_id;try{localStorage.setItem("pulse_visitor_id",D)}catch{}}return R(J,x.assignments),x.assignments}catch($){return Y("Failed to fetch assignments:",$),[]}}function w(){if(!Z||B.length===0)return;let q=Z.apiUrl||"https://api.pulse-ux.com",J=M();B.forEach((Q)=>{let W=JSON.stringify({visitor_id:J,experiment_id:Q.experiment_id,variant_id:Q.variant_id});try{navigator.sendBeacon(`${q}/api/v1/actuator/track/impression`,new Blob([W],{type:"application/json"})),Y(`Tracked impression for variant ${Q.variant_id}`)}catch{fetch(`${q}/api/v1/actuator/track/impression`,{method:"POST",headers:{"Content-Type":"application/json","X-Public-Key":Z.publicKey},body:W,keepalive:!0}).catch(()=>{Y("Failed to track impression")})}})}function v(q,J){if(!Z||B.length===0)return;let Q=Z.apiUrl||"https://api.pulse-ux.com",W=M();B.forEach(($)=>{let x=JSON.stringify({visitor_id:W,experiment_id:$.experiment_id,variant_id:$.variant_id,event_name:q||"conversion",metadata:J});try{navigator.sendBeacon(`${Q}/api/v1/actuator/track/conversion`,new Blob([x],{type:"application/json"})),Y(`Tracked conversion for variant ${$.variant_id}`)}catch{fetch(`${Q}/api/v1/actuator/track/conversion`,{method:"POST",headers:{"Content-Type":"application/json","X-Public-Key":Z.publicKey},body:x,keepalive:!0}).catch(()=>{Y("Failed to track conversion")})}})}async function I(){return new Promise((q,J)=>{if(window.rrweb){q(window.rrweb);return}let Q=document.createElement("script");Q.src="https://cdn.jsdelivr.net/npm/rrweb@2.0.0-alpha.13/dist/rrweb.umd.cjs",Q.onload=()=>{let W=window.rrweb;if(W)q(W);else J(Error("rrweb not found after loading"))},Q.onerror=()=>J(Error("Failed to load rrweb")),document.head.appendChild(Q)})}function L(q=!1){if(!Z||H.length===0||!k)return;let J=Z.apiUrl||"https://api.pulse-ux.com",Q=[...H];H=[],(B.length>0?B.map(($)=>({experiment_id:$.experiment_id,variant_id:$.variant_id})):[{experiment_id:"__standalone__",variant_id:"__standalone__"}]).forEach(($)=>{let x=JSON.stringify({session_id:k,visitor_id:M(),experiment_id:$.experiment_id,variant_id:$.variant_id,url:window.location.href,events:Q,is_final:q,user_agent:navigator.userAgent});try{navigator.sendBeacon(`${J}/api/v1/actuator/recording`,new Blob([x],{type:"application/json"})),Y(`Flushed ${Q.length} recording events for experiment ${$.experiment_id}`)}catch{fetch(`${J}/api/v1/actuator/recording`,{method:"POST",headers:{"Content-Type":"application/json","X-Public-Key":Z.publicKey},body:x,keepalive:!0}).catch(()=>{Y("Failed to upload recording events")})}})}async function u(){if(Z?.enableRecording===!1){Y("Recording disabled by config");return}if(B.length===0&&!Z?.alwaysRecord){Y("No active experiments, skipping recording (set data-always-record='true' to force)");return}try{let q=await I();k=U(),O=q.record({emit(J){if(H.push(J),H.length>=F||H.length>=V)L(!1)}}),G=setInterval(()=>{L(!1)},P),window.addEventListener("beforeunload",()=>{if(G)clearInterval(G),G=null;L(!0)}),document.addEventListener("visibilitychange",()=>{if(document.hidden)L(!1)}),Y("Started session recording with session ID:",k)}catch(q){Y("Failed to start recording:",q)}}function h(){if(O)O(),O=null;if(G)clearInterval(G),G=null;L(!0),Y("Stopped session recording")}async function l(q){if(z){Y("Already initialized");return}if(!q.publicKey){console.error("[Pulse UX] publicKey is required");return}Z=q,Y("Initializing with config:",Z);try{if(B=await f(),Y(`Received ${B.length} assignments`),document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>{K(),w()});else K(),w();if(z=!0,B.length>0)u()}catch(J){console.error("[Pulse UX] Initialization failed:",J)}}function m(){if(!z){Y("Not initialized, cannot refresh");return}K()}function p(){return M()}function o(){return[...B]}var X={init:l,refresh:m,trackConversion:v,getVisitor:p,getAssignments:o,stopRecording:h};(function(){let J=document.currentScript;if(J){let Q=J.dataset.pulseKey||J.dataset.publicKey,W=J.dataset.apiUrl,$=J.dataset.debug==="true",x=J.dataset.alwaysRecord==="true";if(Q)setTimeout(()=>{X.init({publicKey:Q,apiUrl:W,debug:$,alwaysRecord:x})},0)}})();window.PulseUX=X;})();
+(() => {
+  var { defineProperty: j, getOwnPropertyNames: A, getOwnPropertyDescriptor: S } = Object,
+    _ = Object.prototype.hasOwnProperty;
+  var T = new WeakMap(),
+    y = (q) => {
+      var J = T.get(q),
+        Q;
+      if (J) return J;
+      if (((J = j({}, "__esModule", { value: !0 })), (q && typeof q === "object") || typeof q === "function"))
+        A(q).map((W) => !_.call(J, W) && j(J, W, { get: () => q[W], enumerable: !(Q = S(q, W)) || Q.enumerable }));
+      return (T.set(q, J), J);
+    };
+  var C = (q, J) => {
+    for (var Q in J) j(q, Q, { get: J[Q], enumerable: !0, configurable: !0, set: (W) => (J[Q] = () => W) });
+  };
+  var d = {};
+  C(d, { PulseUX: () => X });
+  var Z = null,
+    D = null,
+    B = [],
+    z = !1,
+    k = null,
+    H = [],
+    O = null,
+    G = null,
+    F = 50,
+    P = 1e4,
+    V = 500;
+  function N() {
+    let q = Date.now().toString(36),
+      J = Math.random().toString(36).substring(2, 15);
+    return `${q}-${J}`;
+  }
+  function U() {
+    let q = Date.now().toString(36),
+      J = Math.random().toString(36).substring(2, 15);
+    return `s-${q}-${J}`;
+  }
+  function M() {
+    if (D) return D;
+    try {
+      if (((D = localStorage.getItem("pulse_visitor_id")), !D))
+        ((D = N()), localStorage.setItem("pulse_visitor_id", D));
+    } catch {
+      D = N();
+    }
+    return D;
+  }
+  function E(q) {
+    try {
+      let J = `pulse_assignments_${btoa(q).slice(0, 32)}`,
+        Q = localStorage.getItem(J);
+      if (Q) {
+        let W = JSON.parse(Q);
+        if (W.timestamp && Date.now() - W.timestamp < 300000) return W.assignments;
+      }
+    } catch {}
+    return null;
+  }
+  function R(q, J) {
+    try {
+      let Q = `pulse_assignments_${btoa(q).slice(0, 32)}`;
+      localStorage.setItem(Q, JSON.stringify({ assignments: J, timestamp: Date.now() }));
+    } catch {}
+  }
+  function Y(...q) {
+    if (Z?.debug) console.log("[Pulse UX]", ...q);
+  }
+  function b(q) {
+    try {
+      let J = document.querySelectorAll(q.selector);
+      if (J.length === 0) return (Y(`No elements found for selector: ${q.selector}`), !1);
+      return (
+        J.forEach((Q) => {
+          let W = Q;
+          switch (q.action) {
+            case "style":
+              if (q.property_name) W.style.setProperty(q.property_name, q.value);
+              break;
+            case "class_add":
+              W.classList.add(...q.value.split(" ").filter(Boolean));
+              break;
+            case "class_remove":
+              W.classList.remove(...q.value.split(" ").filter(Boolean));
+              break;
+            case "attribute":
+              if (q.property_name) W.setAttribute(q.property_name, q.value);
+              break;
+            case "text":
+              W.textContent = q.value;
+              break;
+            case "html":
+              W.innerHTML = q.value;
+              break;
+            case "hide":
+              W.style.display = "none";
+              break;
+            case "show":
+              W.style.display = "";
+              break;
+            default:
+              Y(`Unknown patch action: ${q.action}`);
+          }
+        }),
+        Y(`Applied patch: ${q.action} on ${q.selector}`),
+        !0
+      );
+    } catch (J) {
+      return (Y("Error applying patch:", J), !1);
+    }
+  }
+  function K() {
+    if (B.length === 0) {
+      Y("No assignments to apply");
+      return;
+    }
+    B.forEach((q) => {
+      if (q.is_control) {
+        Y(`Variant ${q.variant_id} is control, no patches`);
+        return;
+      }
+      (Y(`Applying ${q.patches.length} patches for variant ${q.variant_id}`), q.patches.forEach(b));
+    });
+  }
+  async function f() {
+    if (!Z) throw Error("Pulse not initialized");
+    let q = Z.apiUrl || "https://api.pulse-ux.com",
+      J = window.location.href,
+      Q = M(),
+      W = E(J);
+    if (W) return (Y("Using cached assignments"), W);
+    try {
+      let $ = await fetch(`${q}/api/v1/actuator/assign`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-Public-Key": Z.publicKey },
+        body: JSON.stringify({
+          visitor_id: Q,
+          url: J,
+          user_agent: navigator.userAgent,
+          referrer: document.referrer || void 0
+        })
+      });
+      if (!$.ok) throw Error(`HTTP ${$.status}`);
+      let x = await $.json();
+      if (x.visitor_id && x.visitor_id !== Q) {
+        D = x.visitor_id;
+        try {
+          localStorage.setItem("pulse_visitor_id", D);
+        } catch {}
+      }
+      return (R(J, x.assignments), x.assignments);
+    } catch ($) {
+      return (Y("Failed to fetch assignments:", $), []);
+    }
+  }
+  function w() {
+    if (!Z || B.length === 0) return;
+    let q = Z.apiUrl || "https://api.pulse-ux.com",
+      J = M();
+    B.forEach((Q) => {
+      let W = JSON.stringify({ visitor_id: J, experiment_id: Q.experiment_id, variant_id: Q.variant_id });
+      try {
+        (navigator.sendBeacon(`${q}/api/v1/actuator/track/impression`, new Blob([W], { type: "application/json" })),
+          Y(`Tracked impression for variant ${Q.variant_id}`));
+      } catch {
+        fetch(`${q}/api/v1/actuator/track/impression`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-Public-Key": Z.publicKey },
+          body: W,
+          keepalive: !0
+        }).catch(() => {
+          Y("Failed to track impression");
+        });
+      }
+    });
+  }
+  function v(q, J) {
+    if (!Z || B.length === 0) return;
+    let Q = Z.apiUrl || "https://api.pulse-ux.com",
+      W = M();
+    B.forEach(($) => {
+      let x = JSON.stringify({
+        visitor_id: W,
+        experiment_id: $.experiment_id,
+        variant_id: $.variant_id,
+        event_name: q || "conversion",
+        metadata: J
+      });
+      try {
+        (navigator.sendBeacon(`${Q}/api/v1/actuator/track/conversion`, new Blob([x], { type: "application/json" })),
+          Y(`Tracked conversion for variant ${$.variant_id}`));
+      } catch {
+        fetch(`${Q}/api/v1/actuator/track/conversion`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-Public-Key": Z.publicKey },
+          body: x,
+          keepalive: !0
+        }).catch(() => {
+          Y("Failed to track conversion");
+        });
+      }
+    });
+  }
+  async function I() {
+    return new Promise((q, J) => {
+      if (window.rrweb) {
+        q(window.rrweb);
+        return;
+      }
+      let Q = document.createElement("script");
+      ((Q.src = "https://cdn.jsdelivr.net/npm/rrweb@2.0.0-alpha.13/dist/rrweb.umd.cjs"),
+        (Q.onload = () => {
+          let W = window.rrweb;
+          if (W) q(W);
+          else J(Error("rrweb not found after loading"));
+        }),
+        (Q.onerror = () => J(Error("Failed to load rrweb"))),
+        document.head.appendChild(Q));
+    });
+  }
+  function L(q = !1) {
+    if (!Z || H.length === 0 || !k) return;
+    let J = Z.apiUrl || "https://api.pulse-ux.com",
+      Q = [...H];
+    ((H = []),
+      (B.length > 0
+        ? B.map(($) => ({ experiment_id: $.experiment_id, variant_id: $.variant_id }))
+        : [{ experiment_id: "__standalone__", variant_id: "__standalone__" }]
+      ).forEach(($) => {
+        let x = JSON.stringify({
+          session_id: k,
+          visitor_id: M(),
+          experiment_id: $.experiment_id,
+          variant_id: $.variant_id,
+          url: window.location.href,
+          events: Q,
+          is_final: q,
+          user_agent: navigator.userAgent
+        });
+        try {
+          (navigator.sendBeacon(`${J}/api/v1/actuator/recording`, new Blob([x], { type: "application/json" })),
+            Y(`Flushed ${Q.length} recording events for experiment ${$.experiment_id}`));
+        } catch {
+          fetch(`${J}/api/v1/actuator/recording`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "X-Public-Key": Z.publicKey },
+            body: x,
+            keepalive: !0
+          }).catch(() => {
+            Y("Failed to upload recording events");
+          });
+        }
+      }));
+  }
+  async function u() {
+    if (Z?.enableRecording === !1) {
+      Y("Recording disabled by config");
+      return;
+    }
+    if (B.length === 0 && !Z?.alwaysRecord) {
+      Y("No active experiments, skipping recording (set data-always-record='true' to force)");
+      return;
+    }
+    try {
+      let q = await I();
+      ((k = U()),
+        (O = q.record({
+          emit(J) {
+            if ((H.push(J), H.length >= F || H.length >= V)) L(!1);
+          }
+        })),
+        (G = setInterval(() => {
+          L(!1);
+        }, P)),
+        window.addEventListener("beforeunload", () => {
+          if (G) (clearInterval(G), (G = null));
+          L(!0);
+        }),
+        document.addEventListener("visibilitychange", () => {
+          if (document.hidden) L(!1);
+        }),
+        Y("Started session recording with session ID:", k));
+    } catch (q) {
+      Y("Failed to start recording:", q);
+    }
+  }
+  function h() {
+    if (O) (O(), (O = null));
+    if (G) (clearInterval(G), (G = null));
+    (L(!0), Y("Stopped session recording"));
+  }
+  async function l(q) {
+    if (z) {
+      Y("Already initialized");
+      return;
+    }
+    if (!q.publicKey) {
+      console.error("[Pulse UX] publicKey is required");
+      return;
+    }
+    ((Z = q), Y("Initializing with config:", Z));
+    try {
+      if (((B = await f()), Y(`Received ${B.length} assignments`), document.readyState === "loading"))
+        document.addEventListener("DOMContentLoaded", () => {
+          (K(), w());
+        });
+      else (K(), w());
+      if (((z = !0), B.length > 0)) u();
+    } catch (J) {
+      console.error("[Pulse UX] Initialization failed:", J);
+    }
+  }
+  function m() {
+    if (!z) {
+      Y("Not initialized, cannot refresh");
+      return;
+    }
+    K();
+  }
+  function p() {
+    return M();
+  }
+  function o() {
+    return [...B];
+  }
+  var X = { init: l, refresh: m, trackConversion: v, getVisitor: p, getAssignments: o, stopRecording: h };
+  (function () {
+    let J = document.currentScript;
+    if (J) {
+      let Q = J.dataset.pulseKey || J.dataset.publicKey,
+        W = J.dataset.apiUrl,
+        $ = J.dataset.debug === "true",
+        x = J.dataset.alwaysRecord === "true";
+      if (Q)
+        setTimeout(() => {
+          X.init({ publicKey: Q, apiUrl: W, debug: $, alwaysRecord: x });
+        }, 0);
+    }
+  })();
+  window.PulseUX = X;
+})();
