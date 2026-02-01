@@ -95,8 +95,15 @@ export default function CompareVariantsPage() {
         winner_variant_id: variantId
       }),
     onSuccess: () => {
+      // Invalidate all related queries so the experiment page refreshes
       queryClient.invalidateQueries({
         queryKey: ["experiment-comparison", experimentId]
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["experiment", experimentId]
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["experiment-variants", experimentId]
       });
       router.push(`/experiments/${experimentId}`);
     }
@@ -114,6 +121,28 @@ export default function CompareVariantsPage() {
     };
     localStorage.setItem(storageKey, JSON.stringify(state));
   }, [userSelectedVariants, syncScroll, chatMessages, storageKey]);
+
+  // Track if AI analysis has been injected as initial message
+  const aiAnalysisInjected = useRef(false);
+
+  // Inject AI analysis as initial chat message when comparison loads
+  useEffect(() => {
+    if (
+      comparison?.ai_analysis &&
+      !aiAnalysisInjected.current &&
+      chatMessages.length === 0
+    ) {
+      aiAnalysisInjected.current = true;
+      setChatMessages([{
+        id: `msg-ai-analysis-${experimentId}`,
+        role: "assistant",
+        content: `📊 **AI Analysis**\n\n${comparison.ai_analysis}\n\n---\n💡 *Ask me to regenerate variants if you'd like different options!*`,
+        timestamp: Date.now()
+      }]);
+      // Auto-expand chat to show the analysis
+      setChatExpanded(true);
+    }
+  }, [comparison?.ai_analysis, chatMessages.length, experimentId]);
 
   // Compute default selected variants from comparison data
   const defaultSelectedVariants = useMemo((): [string, string] => {
@@ -369,14 +398,6 @@ export default function CompareVariantsPage() {
             </div>
           </div>
         </div>
-
-        {/* AI Analysis */}
-        {comparison.ai_analysis && (
-          <div className="my-4 rounded-lg bg-muted/50 border p-4">
-            <p className="text-xs font-medium text-muted-foreground uppercase mb-2">AI Analysis</p>
-            <p className="text-sm">{comparison.ai_analysis}</p>
-          </div>
-        )}
 
         {/* Comparison Grid */}
         <div className="grid grid-cols-2 gap-4 mt-4">

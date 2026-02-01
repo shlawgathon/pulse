@@ -58,9 +58,19 @@ class SiteService:
         Returns:
             HTML script tag as a string.
         """
-        # In production, this would point to a CDN URL
-        api_url = settings.APP_URL.rstrip("/")
-        return f'<script src="{api_url}/actuator.js" data-pulse-key="{public_key}" defer></script>'
+        # APP_URL is the frontend URL (where actuator.js is served)
+        app_url = settings.APP_URL.rstrip("/")
+        # API_URL is the backend URL (where API endpoints are)
+        api_url = settings.API_URL.rstrip("/")
+        
+        return (
+            f'<script src="{app_url}/actuator.js" '
+            f'data-pulse-key="{public_key}" '
+            f'data-api-url="{api_url}" '
+            f'data-debug="true" '
+            f'data-always-record="true" '
+            f'defer></script>'
+        )
 
     async def create_site(
         self,
