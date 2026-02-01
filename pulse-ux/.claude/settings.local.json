@@ -31,7 +31,8 @@
       "Bash(ls:*)",
       "Bash(cd:*)",
       "Bash(pushd:*)",
-      "Bash(popd:*)"
+      "Bash(popd:*)",
+      "Bash(bun run format:*)"
     ]
   }
 }

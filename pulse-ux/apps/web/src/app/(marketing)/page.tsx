@@ -8,8 +8,7 @@
  * - Monospace CTAs
  */
 import Link from "next/link";
-import Image from "next/image";
-import { ArrowRight, Zap, LineChart, GitPullRequest, Eye } from "lucide-react";
+import { ArrowRight, Zap, LineChart, Eye } from "lucide-react";
 import { WavyAsciiBackground } from "@/components/wavy-ascii-background";
 
 export default function LandingPage() {
@@ -54,8 +53,6 @@ export default function LandingPage() {
                 Talk to an engineer <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
-
-
           </div>
         </div>
       </section>
@@ -69,8 +66,8 @@ export default function LandingPage() {
               <span className="text-lime-400">One pixel at a time.</span>
             </h2>
             <p className="text-white/60 text-xl max-w-2xl mx-auto">
-              Most tools tell you <i>what</i> is wrong. Pulse fixes it.
-              We generate code, run experiments, and maximize conversions automatically.
+              Most tools tell you <i>what</i> is wrong. Pulse fixes it. We generate code, run experiments, and maximize
+              conversions automatically.
             </p>
           </div>
 
@@ -163,5 +160,3 @@ function Step({ number, title, description }: { number: string; title: string; d
     </div>
   );
 }
-
-
