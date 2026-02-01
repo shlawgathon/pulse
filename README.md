@@ -5,6 +5,7 @@
 <img width="120" height="120" alt="Pulse Logo" src="https://github.com/user-attachments/assets/76f0d704-3049-4e6a-9fd5-634851c636b2" />
 
 ### AI-Powered UX Optimization
+
 **Scan. Generate. Test. Ship.**
 
 [Demo](https://pulse.dev) · [Documentation](https://docs.pulse.dev) · [Report Bug](https://github.com/shlawg/pulse/issues)
@@ -21,6 +22,16 @@ Instead of just telling you what's wrong, Pulse **generates code** to fix it. It
 
 > **"It's like having a senior frontend engineer and a data scientist working 24/7."**
 
+## How It Works
+
+```mermaid
+flowchart LR
+    A["Customer<br/>Website"] -->|"1-line script"| B["Pulse UX<br/>AI Engine"]
+    B -->|"Auto-generates"| C["A/B Test<br/>Variants"]
+    C -->|"Measures"| D["Winner<br/>PR"]
+    D -->|"Increases"| E["+15-30%<br/>Conversions"]
+```
+
 ## ✨ Features
 
 - **🔍 Generative UI**: Our AI doesn't just chat—it writes production-ready React/HTML code to improved your components.
@@ -30,16 +41,17 @@ Instead of just telling you what's wrong, Pulse **generates code** to fix it. It
 
 ## 🛠 Tech Stack
 
-| Layer | Technology |
-|-------|------------|
-| **Frontend** | Next.js 16, TailwindCSS, shadcn/ui |
-| **Backend** | FastAPI, Python 3.12 |
+| Layer         | Technology                                     |
+| ------------- | ---------------------------------------------- |
+| **Frontend**  | Next.js 16, TailwindCSS, shadcn/ui             |
+| **Backend**   | FastAPI, Python 3.12                           |
 | **AI Engine** | Claude 3.5 Sonnet / Kimi k2.5 (via OpenRouter) |
-| **Data** | MongoDB Atlas, Firecrawl |
+| **Data**      | MongoDB Atlas, Firecrawl                       |
 
 ## 🚀 Quick Start
 
 ### Prerequisites
+
 - Node.js 20+
 - Python 3.12+
 - Bun
