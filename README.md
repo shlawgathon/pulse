@@ -45,7 +45,7 @@ flowchart TB
 
     subgraph Output
         I[Analytics Dashboard]
-        J[Winner Detection]
+        J[Manual Selection<br/>+ Chat Refinement]
         K[GitHub PR<br/>Auto-generated]
     end
 
