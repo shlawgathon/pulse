@@ -47,11 +47,23 @@ export default function CompareVariantsPage() {
         const parsed = JSON.parse(stored) as CompareState;
         // Only use state from last 24 hours
         if (Date.now() - parsed.timestamp < 24 * 60 * 60 * 1000) {
+          // Deduplicate messages by ID to fix any stale duplicates
+          if (parsed.chatMessages) {
+            const seen = new Set<string>();
+            parsed.chatMessages = parsed.chatMessages.filter(msg => {
+              if (seen.has(msg.id)) return false;
+              seen.add(msg.id);
+              return true;
+            });
+          }
           return parsed;
         }
       }
+      // Clear old data
+      localStorage.removeItem(storageKey);
     } catch {
-      // Ignore parse errors
+      // Clear corrupted data
+      localStorage.removeItem(storageKey);
     }
     return {};
   };
@@ -202,11 +214,9 @@ export default function CompareVariantsPage() {
     [selectWinner]
   );
 
-  // Message counter for unique IDs
-  const msgCounter = useRef(0);
+  // Generate unique message IDs using crypto
   const getNextMsgId = useCallback(() => {
-    msgCounter.current += 1;
-    return `msg-${Date.now()}-${msgCounter.current}`;
+    return `msg-${crypto.randomUUID()}`;
   }, []);
 
   // Polling state for waiting on variant generation
