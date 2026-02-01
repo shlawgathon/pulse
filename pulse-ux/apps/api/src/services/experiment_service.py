@@ -224,6 +224,37 @@ class ExperimentService:
             Variant.experiment_id == experiment_id
         ).to_list()
 
+    async def delete_experiment(
+        self,
+        experiment_id: str,
+        user_id: str,
+    ) -> bool:
+        """
+        Delete an experiment and all its variants.
+
+        Args:
+            experiment_id: Experiment ID.
+            user_id: User ID for authorization.
+
+        Returns:
+            True if deleted, False if not found or unauthorized.
+        """
+        experiment = await self.get_experiment(experiment_id, user_id)
+        if experiment is None:
+            return False
+
+        # Delete all variants for this experiment
+        await Variant.find(
+            Variant.experiment_id == experiment_id
+        ).delete()
+
+        # Delete the experiment
+        await experiment.delete()
+        
+        logger.info(f"Deleted experiment {experiment_id} and its variants")
+        return True
+
+
     async def activate_experiment(
         self,
         experiment_id: str,

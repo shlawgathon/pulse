@@ -40,7 +40,7 @@ export interface SiteCreate {
 }
 
 // Experiment types
-export type ExperimentStatus = "draft" | "pending" | "active" | "paused" | "completed" | "archived";
+export type ExperimentStatus = "draft" | "pending" | "active" | "paused" | "completed" | "archived" | "failed";
 
 export interface Experiment {
   id: string;
