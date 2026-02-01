@@ -132,19 +132,22 @@ export default function CompareVariantsPage() {
     const handleMessage = (event: MessageEvent) => {
       if (event.data?.type !== "pulse-scroll") return;
       if (isScrolling.current) return;
-      
+
       isScrolling.current = true;
       const { source, scrollTop, scrollLeft } = event.data;
-      
+
       const targetIframe = source === "left" ? rightIframeRef.current : leftIframeRef.current;
       if (targetIframe?.contentWindow) {
-        targetIframe.contentWindow.postMessage({
-          type: "pulse-scroll-to",
-          scrollTop,
-          scrollLeft
-        }, "*");
+        targetIframe.contentWindow.postMessage(
+          {
+            type: "pulse-scroll-to",
+            scrollTop,
+            scrollLeft
+          },
+          "*"
+        );
       }
-      
+
       requestAnimationFrame(() => {
         isScrolling.current = false;
       });
@@ -199,45 +202,48 @@ export default function CompareVariantsPage() {
     [selectWinner]
   );
 
-  const handleChatSubmit = useCallback(async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!chatInput.trim() || isChatSending) return;
+  const handleChatSubmit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!chatInput.trim() || isChatSending) return;
 
-    const userMessage: ChatMessage = {
-      id: `msg-${Date.now()}`,
-      role: "user",
-      content: chatInput.trim(),
-      timestamp: Date.now()
-    };
-
-    setChatMessages(prev => [...prev, userMessage]);
-    setChatInput("");
-    setIsChatSending(true);
-
-    try {
-      // TODO: Connect to LLM API for modifications
-      // For now, simulate a response
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const assistantMessage: ChatMessage = {
+      const userMessage: ChatMessage = {
         id: `msg-${Date.now()}`,
-        role: "assistant",
-        content: `I'll help you with: "${userMessage.content}". This feature is coming soon - I'll be able to suggest DOM patches to modify the variants based on your feedback.`,
+        role: "user",
+        content: chatInput.trim(),
         timestamp: Date.now()
       };
-      setChatMessages(prev => [...prev, assistantMessage]);
-    } catch (error) {
-      const errorMessage: ChatMessage = {
-        id: `msg-${Date.now()}`,
-        role: "assistant",
-        content: "Sorry, I encountered an error. Please try again.",
-        timestamp: Date.now()
-      };
-      setChatMessages(prev => [...prev, errorMessage]);
-    } finally {
-      setIsChatSending(false);
-    }
-  }, [chatInput, isChatSending]);
+
+      setChatMessages((prev) => [...prev, userMessage]);
+      setChatInput("");
+      setIsChatSending(true);
+
+      try {
+        // TODO: Connect to LLM API for modifications
+        // For now, simulate a response
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+
+        const assistantMessage: ChatMessage = {
+          id: `msg-${Date.now()}`,
+          role: "assistant",
+          content: `I'll help you with: "${userMessage.content}". This feature is coming soon - I'll be able to suggest DOM patches to modify the variants based on your feedback.`,
+          timestamp: Date.now()
+        };
+        setChatMessages((prev) => [...prev, assistantMessage]);
+      } catch {
+        const errorMessage: ChatMessage = {
+          id: `msg-${Date.now()}`,
+          role: "assistant",
+          content: "Sorry, I encountered an error. Please try again.",
+          timestamp: Date.now()
+        };
+        setChatMessages((prev) => [...prev, errorMessage]);
+      } finally {
+        setIsChatSending(false);
+      }
+    },
+    [chatInput, isChatSending]
+  );
 
   const handleClearChat = useCallback(() => {
     setChatMessages([]);
@@ -293,7 +299,7 @@ export default function CompareVariantsPage() {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-h-0 gap-4">
         {/* Comparison Grid */}
-        <div className={`grid grid-cols-2 gap-4 ${chatExpanded ? 'flex-1' : 'flex-[2]'} min-h-0`}>
+        <div className={`grid grid-cols-2 gap-4 ${chatExpanded ? "flex-1" : "flex-[2]"} min-h-0`}>
           {/* Left Panel */}
           <div className="flex flex-col min-h-0">
             <div className="flex-shrink-0 mb-3">
@@ -430,7 +436,9 @@ export default function CompareVariantsPage() {
         </div>
 
         {/* Chat Section */}
-        <div className={`flex-shrink-0 border rounded-lg bg-card transition-all duration-300 ${chatExpanded ? 'flex-1 min-h-[200px]' : 'h-14'}`}>
+        <div
+          className={`flex-shrink-0 border rounded-lg bg-card transition-all duration-300 ${chatExpanded ? "flex-1 min-h-[200px]" : "h-14"}`}
+        >
           {/* Chat Header */}
           <div
             className="flex items-center justify-between px-4 py-3 border-b cursor-pointer hover:bg-muted/50"
@@ -447,7 +455,14 @@ export default function CompareVariantsPage() {
             </div>
             <div className="flex items-center gap-2">
               {chatMessages.length > 0 && (
-                <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); handleClearChat(); }}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleClearChat();
+                  }}
+                >
                   Clear
                 </Button>
               )}
@@ -464,20 +479,17 @@ export default function CompareVariantsPage() {
               <div className="flex-1 overflow-y-auto p-4 space-y-3">
                 {chatMessages.length === 0 ? (
                   <div className="text-center text-sm text-muted-foreground py-8">
-                    <p>Describe modifications you'd like to make to the variants.</p>
-                    <p className="text-xs mt-1">e.g., "Make the CTA button larger" or "Change the headline to be more urgent"</p>
+                    <p>Describe modifications you&apos;d like to make to the variants.</p>
+                    <p className="text-xs mt-1">
+                      e.g., &quot;Make the CTA button larger&quot; or &quot;Change the headline to be more urgent&quot;
+                    </p>
                   </div>
                 ) : (
                   chatMessages.map((msg) => (
-                    <div
-                      key={msg.id}
-                      className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-                    >
+                    <div key={msg.id} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
                       <div
                         className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${
-                          msg.role === "user"
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-muted"
+                          msg.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted"
                         }`}
                       >
                         {msg.content}
@@ -500,11 +512,7 @@ export default function CompareVariantsPage() {
                     disabled={isChatSending}
                   />
                   <Button type="submit" size="sm" disabled={!chatInput.trim() || isChatSending}>
-                    {isChatSending ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Send className="h-4 w-4" />
-                    )}
+                    {isChatSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                   </Button>
                 </div>
               </form>

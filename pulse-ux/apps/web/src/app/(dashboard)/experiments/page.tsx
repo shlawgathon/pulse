@@ -6,14 +6,13 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, ExternalLink, Trash2, RefreshCw, AlertCircle } from "lucide-react";
+import { Plus, ExternalLink, Trash2, RefreshCw } from "lucide-react";
 import { api } from "@/lib/api-client";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { StatusBadge } from "@/components/status-badge";
 import { formatDate, getHostname } from "@/lib/utils";
 import type { Experiment, Site } from "@/types";
-
 
 // Loading skeleton component
 function LoadingSkeleton() {
@@ -40,14 +39,14 @@ function LoadingSkeleton() {
 }
 
 // Experiment card component with action buttons
-function ExperimentCard({ 
-  experiment, 
-  onDelete, 
+function ExperimentCard({
+  experiment,
+  onDelete,
   onRetry,
   isDeleting,
-  isRetrying 
-}: { 
-  experiment: Experiment; 
+  isRetrying
+}: {
+  experiment: Experiment;
   onDelete: (id: string) => void;
   onRetry: (id: string) => void;
   isDeleting: boolean;
@@ -55,7 +54,7 @@ function ExperimentCard({
 }) {
   const hostname = useMemo(() => getHostname(experiment.target_url), [experiment.target_url]);
   const createdDate = useMemo(() => formatDate(experiment.created_at), [experiment.created_at]);
-  
+
   // Show retry button for draft (generation in progress or failed) experiments
   const showRetry = experiment.status === "draft" || experiment.status === "failed";
   // Check if this is a failed experiment based on description containing error
@@ -78,10 +77,7 @@ function ExperimentCard({
 
   return (
     <div className="bg-card rounded-lg border hover:border-primary/50 transition-colors">
-      <Link
-        href={`/experiments/${experiment.id}`}
-        className="block p-4"
-      >
+      <Link href={`/experiments/${experiment.id}`} className="block p-4">
         <div className="flex items-start justify-between mb-2">
           <h3 className="font-medium">{experiment.name}</h3>
           <StatusBadge status={displayStatus} />
@@ -103,14 +99,8 @@ function ExperimentCard({
       {/* Action buttons */}
       <div className="flex items-center justify-end gap-2 px-4 pb-3 pt-0">
         {showRetry && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRetry}
-            disabled={isRetrying}
-            className="text-xs h-7"
-          >
-            <RefreshCw className={`h-3 w-3 mr-1 ${isRetrying ? 'animate-spin' : ''}`} />
+          <Button variant="outline" size="sm" onClick={handleRetry} disabled={isRetrying} className="text-xs h-7">
+            <RefreshCw className={`h-3 w-3 mr-1 ${isRetrying ? "animate-spin" : ""}`} />
             {isRetrying ? "Retrying..." : "Retry"}
           </Button>
         )}
@@ -128,7 +118,6 @@ function ExperimentCard({
     </div>
   );
 }
-
 
 // Info cards component
 function InfoCards() {
@@ -158,7 +147,7 @@ export default function ExperimentsPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [retryingId, setRetryingId] = useState<string | null>(null);
-  
+
   const queryClient = useQueryClient();
 
   // Fetch sites
@@ -186,7 +175,7 @@ export default function ExperimentsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["experiments"] });
     },
-    onSettled: () => setDeletingId(null),
+    onSettled: () => setDeletingId(null)
   });
 
   // Retry/regenerate mutation
@@ -196,7 +185,7 @@ export default function ExperimentsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["experiments"] });
     },
-    onSettled: () => setRetryingId(null),
+    onSettled: () => setRetryingId(null)
   });
 
   const handleDelete = (id: string) => {
@@ -264,8 +253,8 @@ export default function ExperimentsPage() {
       ) : experiments && experiments.length > 0 ? (
         <div className="grid gap-4">
           {experiments.map((experiment) => (
-            <ExperimentCard 
-              key={experiment.id} 
+            <ExperimentCard
+              key={experiment.id}
               experiment={experiment}
               onDelete={handleDelete}
               onRetry={handleRetry}
@@ -289,4 +278,3 @@ export default function ExperimentsPage() {
     </div>
   );
 }
-
