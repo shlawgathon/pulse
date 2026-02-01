@@ -58,8 +58,9 @@ class SiteService:
         Returns:
             HTML script tag as a string.
         """
-        # In production, this would point to a CDN URL
+        # APP_URL is the frontend URL (where actuator.js is served)
         app_url = settings.APP_URL.rstrip("/")
+        # API_URL is the backend URL (where API endpoints are)
         api_url = settings.API_URL.rstrip("/")
 
         # Include data-api-url if API is on a different host than the app
