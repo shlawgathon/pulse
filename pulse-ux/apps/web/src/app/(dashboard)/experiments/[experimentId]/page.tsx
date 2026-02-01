@@ -165,7 +165,10 @@ export default function ExperimentDetailPage() {
               {regenerateVariants.isPending ? "Regenerating..." : "Regenerate Variants"}
             </Button>
           )}
-          {(experiment.status === "pending" || experiment.status === "active" || experiment.status === "paused" || experiment.status === "completed") && (
+          {(experiment.status === "pending" ||
+            experiment.status === "active" ||
+            experiment.status === "paused" ||
+            experiment.status === "completed") && (
             <Button variant="secondary" asChild>
               <Link href={`/experiments/${experimentId}/compare`}>Compare Variants</Link>
             </Button>

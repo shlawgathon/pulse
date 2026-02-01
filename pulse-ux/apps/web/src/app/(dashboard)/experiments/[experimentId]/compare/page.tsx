@@ -127,18 +127,16 @@ export default function CompareVariantsPage() {
 
   // Inject AI analysis as initial chat message when comparison loads
   useEffect(() => {
-    if (
-      comparison?.ai_analysis &&
-      !aiAnalysisInjected.current &&
-      chatMessages.length === 0
-    ) {
+    if (comparison?.ai_analysis && !aiAnalysisInjected.current && chatMessages.length === 0) {
       aiAnalysisInjected.current = true;
-      setChatMessages([{
-        id: `msg-ai-analysis-${experimentId}`,
-        role: "assistant",
-        content: `📊 **AI Analysis**\n\n${comparison.ai_analysis}\n\n---\n💡 *Ask me to regenerate variants if you'd like different options!*`,
-        timestamp: Date.now()
-      }]);
+      setChatMessages([
+        {
+          id: `msg-ai-analysis-${experimentId}`,
+          role: "assistant",
+          content: `📊 **AI Analysis**\n\n${comparison.ai_analysis}\n\n---\n💡 *Ask me to regenerate variants if you'd like different options!*`,
+          timestamp: Date.now()
+        }
+      ]);
       // Auto-expand chat to show the analysis
       setChatExpanded(true);
     }
