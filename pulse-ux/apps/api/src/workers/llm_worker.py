@@ -121,13 +121,16 @@ async def generate_variants_for_experiment(
         return variant_ids
 
     except Exception as e:
-        logger.error(f"Failed to generate variants for experiment {experiment_id}: {e}")
+        import traceback
+        error_details = f"{type(e).__name__}: {str(e) or 'No message'}"
+        logger.error(f"Failed to generate variants for experiment {experiment_id}: {error_details}")
+        logger.error(f"Full traceback:\n{traceback.format_exc()}")
 
         # Update experiment status to indicate failure
         experiment = await Experiment.get(experiment_id)
         if experiment:
             experiment.status = ExperimentStatus.DRAFT
-            experiment.description = f"Variant generation failed: {str(e)}"
+            experiment.description = f"Variant generation failed: {error_details}"
             experiment.updated_at = datetime.utcnow()
             await experiment.save()
 
