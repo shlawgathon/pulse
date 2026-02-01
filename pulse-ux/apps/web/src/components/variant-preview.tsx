@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useMemo } from "react";
+import { useEffect, useRef, useMemo, forwardRef, useImperativeHandle } from "react";
 import type { DOMPatch, Variant } from "@/types";
 
 /**
@@ -119,6 +119,46 @@ function generatePatchScript(patches: DOMPatch[]): string {
 }
 
 /**
+ * Generates scroll sync script that communicates with parent window.
+ */
+function generateScrollSyncScript(scrollSyncId: string): string {
+  return `
+    <script>
+      (function() {
+        let isReceivingScroll = false;
+        
+        // Send scroll events to parent
+        window.addEventListener('scroll', function() {
+          if (isReceivingScroll) return;
+          window.parent.postMessage({
+            type: 'pulse-scroll',
+            source: '${scrollSyncId}',
+            scrollTop: window.scrollY || document.documentElement.scrollTop,
+            scrollLeft: window.scrollX || document.documentElement.scrollLeft
+          }, '*');
+        }, { passive: true });
+        
+        // Receive scroll commands from parent
+        window.addEventListener('message', function(event) {
+          if (event.data?.type !== 'pulse-scroll-to') return;
+          isReceivingScroll = true;
+          window.scrollTo({
+            top: event.data.scrollTop,
+            left: event.data.scrollLeft,
+            behavior: 'instant'
+          });
+          requestAnimationFrame(function() {
+            isReceivingScroll = false;
+          });
+        });
+        
+        console.log('[Pulse UX] Scroll sync initialized for: ${scrollSyncId}');
+      })();
+    </script>
+  `;
+}
+
+/**
  * Injects a <base> tag to fix relative URLs in the HTML.
  * This ensures CSS, images, and other resources load from the original domain.
  */
@@ -198,31 +238,45 @@ function injectDarkMode(html: string): string {
 /**
  * Injects the patch script into the HTML just before </body>.
  */
-function injectPatchScript(html: string, patches: DOMPatch[], targetUrl?: string): string {
+function injectPatchScript(
+  html: string, 
+  patches: DOMPatch[], 
+  targetUrl?: string,
+  scrollSyncId?: string
+): string {
   // First inject base tag to fix relative URLs
   let processedHtml = injectBaseTag(html, targetUrl);
 
   // Inject dark mode support
   processedHtml = injectDarkMode(processedHtml);
 
-  if (patches.length === 0) {
+  // Build scripts to inject
+  let scripts = "";
+  
+  if (patches.length > 0) {
+    scripts += generatePatchScript(patches);
+  }
+  
+  if (scrollSyncId) {
+    scripts += generateScrollSyncScript(scrollSyncId);
+  }
+
+  if (!scripts) {
     return processedHtml;
   }
 
-  const patchScript = generatePatchScript(patches);
-
   // Try to inject before </body>
   if (processedHtml.includes("</body>")) {
-    return processedHtml.replace("</body>", `${patchScript}</body>`);
+    return processedHtml.replace("</body>", `${scripts}</body>`);
   }
 
   // If no </body>, try before </html>
   if (processedHtml.includes("</html>")) {
-    return processedHtml.replace("</html>", `${patchScript}</html>`);
+    return processedHtml.replace("</html>", `${scripts}</html>`);
   }
 
   // Fallback: append to the end
-  return processedHtml + patchScript;
+  return processedHtml + scripts;
 }
 
 interface VariantPreviewProps {
@@ -230,38 +284,53 @@ interface VariantPreviewProps {
   variant: Variant;
   targetUrl?: string;
   className?: string;
+  enableScrollSync?: boolean;
+  scrollSyncId?: string;
 }
 
 /**
  * VariantPreview renders the base HTML with DOM patches applied in a sandboxed iframe.
  * This allows users to see a live preview of how each variant would look.
  */
-export function VariantPreview({ baseHtml, variant, targetUrl, className = "" }: VariantPreviewProps) {
-  const iframeRef = useRef<HTMLIFrameElement>(null);
+export const VariantPreview = forwardRef<HTMLIFrameElement, VariantPreviewProps>(
+  function VariantPreview(
+    { baseHtml, variant, targetUrl, className = "", enableScrollSync = false, scrollSyncId },
+    ref
+  ) {
+    const iframeRef = useRef<HTMLIFrameElement>(null);
 
-  // Memoize the patched HTML to avoid recalculating on every render
-  const patchedHtml = useMemo(() => {
-    return injectPatchScript(baseHtml, variant.patches, targetUrl);
-  }, [baseHtml, variant.patches, targetUrl]);
+    // Expose the iframe ref to parent
+    useImperativeHandle(ref, () => iframeRef.current as HTMLIFrameElement);
 
-  useEffect(() => {
-    const iframe = iframeRef.current;
-    if (!iframe) return;
+    // Memoize the patched HTML to avoid recalculating on every render
+    const patchedHtml = useMemo(() => {
+      return injectPatchScript(
+        baseHtml, 
+        variant.patches, 
+        targetUrl,
+        enableScrollSync ? scrollSyncId : undefined
+      );
+    }, [baseHtml, variant.patches, targetUrl, enableScrollSync, scrollSyncId]);
 
-    // Use srcdoc for security (sandboxed content)
-    iframe.srcdoc = patchedHtml;
-  }, [patchedHtml]);
+    useEffect(() => {
+      const iframe = iframeRef.current;
+      if (!iframe) return;
 
-  return (
-    <iframe
-      ref={iframeRef}
-      title={`Preview of ${variant.name}`}
-      className={`w-full h-full border-0 bg-white ${className}`}
-      sandbox="allow-scripts allow-same-origin"
-      loading="lazy"
-    />
-  );
-}
+      // Use srcdoc for security (sandboxed content)
+      iframe.srcdoc = patchedHtml;
+    }, [patchedHtml]);
+
+    return (
+      <iframe
+        ref={iframeRef}
+        title={`Preview of ${variant.name}`}
+        className={`w-full h-full border-0 bg-white ${className}`}
+        sandbox="allow-scripts allow-same-origin"
+        loading="lazy"
+      />
+    );
+  }
+);
 
 /**
  * Simple fallback component when no HTML is available
