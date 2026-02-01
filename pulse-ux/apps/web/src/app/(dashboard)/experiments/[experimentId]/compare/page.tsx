@@ -50,7 +50,7 @@ export default function CompareVariantsPage() {
           // Deduplicate messages by ID to fix any stale duplicates
           if (parsed.chatMessages) {
             const seen = new Set<string>();
-            parsed.chatMessages = parsed.chatMessages.filter(msg => {
+            parsed.chatMessages = parsed.chatMessages.filter((msg) => {
               if (seen.has(msg.id)) return false;
               seen.add(msg.id);
               return true;
@@ -127,18 +127,16 @@ export default function CompareVariantsPage() {
 
   // Inject AI analysis as initial chat message when comparison loads
   useEffect(() => {
-    if (
-      comparison?.ai_analysis &&
-      !aiAnalysisInjected.current &&
-      chatMessages.length === 0
-    ) {
+    if (comparison?.ai_analysis && !aiAnalysisInjected.current && chatMessages.length === 0) {
       aiAnalysisInjected.current = true;
-      setChatMessages([{
-        id: `msg-ai-analysis-${experimentId}`,
-        role: "assistant",
-        content: `📊 **AI Analysis**\n\n${comparison.ai_analysis}\n\n---\n💡 *Ask me to regenerate variants if you'd like different options!*`,
-        timestamp: Date.now()
-      }]);
+      setChatMessages([
+        {
+          id: `msg-ai-analysis-${experimentId}`,
+          role: "assistant",
+          content: `📊 **AI Analysis**\n\n${comparison.ai_analysis}\n\n---\n💡 *Ask me to regenerate variants if you'd like different options!*`,
+          timestamp: Date.now()
+        }
+      ]);
       // Auto-expand chat to show the analysis
       setChatExpanded(true);
     }
@@ -248,9 +246,6 @@ export default function CompareVariantsPage() {
     return `msg-${crypto.randomUUID()}`;
   }, []);
 
-  // Polling state for waiting on variant generation
-  const [isPolling, setIsPolling] = useState(false);
-
   const handleChatSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
@@ -269,10 +264,19 @@ export default function CompareVariantsPage() {
 
       try {
         const lowerContent = userMessage.content.toLowerCase();
-        
+
         // Check if user wants to regenerate
-        const regenerateKeywords = ['regenerate', 'new variant', 'try again', 'different', 'redo', 'refresh', 'generate new', 'create new'];
-        const wantsRegenerate = regenerateKeywords.some(keyword => lowerContent.includes(keyword));
+        const regenerateKeywords = [
+          "regenerate",
+          "new variant",
+          "try again",
+          "different",
+          "redo",
+          "refresh",
+          "generate new",
+          "create new"
+        ];
+        const wantsRegenerate = regenerateKeywords.some((keyword) => lowerContent.includes(keyword));
 
         if (wantsRegenerate) {
           // Trigger actual regeneration
@@ -286,48 +290,52 @@ export default function CompareVariantsPage() {
 
           // Call regenerate API
           await api.post(`/api/v1/experiments/${experimentId}/regenerate`);
-          
-          // Start polling for completion
-          setIsPolling(true);
-          
+
           const pollForVariants = async () => {
             const maxAttempts = 30; // 60 seconds max (2s intervals)
             for (let i = 0; i < maxAttempts; i++) {
-              await new Promise(resolve => setTimeout(resolve, 2000));
-              
+              await new Promise((resolve) => setTimeout(resolve, 2000));
+
               try {
-                const data = await api.get<{ variants: { id: string }[] }>(`/api/v1/experiments/${experimentId}/variants`);
-                
+                const data = await api.get<{ variants: { id: string }[] }>(
+                  `/api/v1/experiments/${experimentId}/variants`
+                );
+
                 // Check if we have non-control variants (regeneration complete)
                 if (data.variants && data.variants.length >= 2) {
                   // Invalidate and refetch
                   await queryClient.invalidateQueries({ queryKey: ["experiment-comparison", experimentId] });
-                  
-                  setChatMessages((prev) => [...prev, {
-                    id: getNextMsgId(),
-                    role: "assistant",
-                    content: "✅ New variants are ready! Refreshing the comparison view...",
-                    timestamp: Date.now()
-                  }]);
-                  
-                  setIsPolling(false);
+
+                  setChatMessages((prev) => [
+                    ...prev,
+                    {
+                      id: getNextMsgId(),
+                      role: "assistant",
+                      content: "✅ New variants are ready! Refreshing the comparison view...",
+                      timestamp: Date.now()
+                    }
+                  ]);
+
                   return;
                 }
               } catch {
                 // Keep polling on error
               }
             }
-            
+
             // Timeout
-            setChatMessages((prev) => [...prev, {
-              id: getNextMsgId(),
-              role: "assistant",
-              content: "⚠️ Variant generation is taking longer than expected. Please refresh the page or check back shortly.",
-              timestamp: Date.now()
-            }]);
-            setIsPolling(false);
+            setChatMessages((prev) => [
+              ...prev,
+              {
+                id: getNextMsgId(),
+                role: "assistant",
+                content:
+                  "⚠️ Variant generation is taking longer than expected. Please refresh the page or check back shortly.",
+                timestamp: Date.now()
+              }
+            ]);
           };
-          
+
           pollForVariants();
         } else {
           // For other requests, explain the feature
@@ -343,7 +351,8 @@ export default function CompareVariantsPage() {
         const errorMessage: ChatMessage = {
           id: getNextMsgId(),
           role: "assistant",
-          content: "Sorry, I encountered an error while regenerating. Please try again or use the Regenerate button on the experiment page.",
+          content:
+            "Sorry, I encountered an error while regenerating. Please try again or use the Regenerate button on the experiment page.",
           timestamp: Date.now()
         };
         setChatMessages((prev) => [...prev, errorMessage]);
@@ -550,9 +559,7 @@ export default function CompareVariantsPage() {
             <MessageSquare className="h-4 w-4 text-muted-foreground" />
             <span className="font-medium text-sm">Modification Chat</span>
             {chatMessages.length > 0 && (
-              <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
-                {chatMessages.length}
-              </span>
+              <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">{chatMessages.length}</span>
             )}
           </div>
           <div className="flex items-center gap-2">

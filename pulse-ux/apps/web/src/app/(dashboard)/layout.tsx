@@ -47,13 +47,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* Header with org switcher */}
         <div className="h-16 border-b border-sidebar-border flex items-center px-4">
           <button className="flex items-center gap-2 w-full text-left hover:bg-sidebar-accent rounded-md px-2 py-1.5">
-            <Image
-              src="/pulse-icon.png"
-              alt="Pulse"
-              width={32}
-              height={32}
-              className="rounded-md"
-            />
+            <Image src="/pulse-icon.png" alt="Pulse" width={32} height={32} className="rounded-md" />
             <span className="font-medium truncate flex-1">Pulse</span>
             <ChevronDown className="h-4 w-4 text-muted-foreground" />
           </button>

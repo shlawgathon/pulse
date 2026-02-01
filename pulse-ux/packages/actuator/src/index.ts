@@ -19,6 +19,7 @@ interface PulseConfig {
   apiUrl?: string;
   debug?: boolean;
   enableRecording?: boolean; // Enable session recording (default: true when experiments active)
+  alwaysRecord?: boolean; // Force recording even without active experiments (useful for debugging)
 }
 
 interface DOMPatch {
@@ -405,8 +406,15 @@ function flushRecordingEvents(isFinal: boolean = false): void {
   const eventsToSend = [...recordingEvents];
   recordingEvents = []; // Clear buffer
 
-  // Send recording for each active experiment
-  assignments.forEach((assignment) => {
+  // Build list of recordings to send - one per experiment, or a standalone if no experiments
+  const recordingsToSend = assignments.length > 0
+    ? assignments.map((assignment) => ({
+        experiment_id: assignment.experiment_id,
+        variant_id: assignment.variant_id,
+      }))
+    : [{ experiment_id: "__standalone__", variant_id: "__standalone__" }];
+
+  recordingsToSend.forEach((assignment) => {
     const data = JSON.stringify({
       session_id: sessionId,
       visitor_id: getVisitorId(),
@@ -445,14 +453,15 @@ function flushRecordingEvents(isFinal: boolean = false): void {
  * Start session recording with rrweb
  */
 async function startRecording(): Promise<void> {
-  if (assignments.length === 0) {
-    debug("No active experiments, skipping recording");
-    return;
-  }
-
   // Check if recording is disabled
   if (config?.enableRecording === false) {
     debug("Recording disabled by config");
+    return;
+  }
+
+  // Skip recording if no active experiments (unless alwaysRecord is enabled)
+  if (assignments.length === 0 && !config?.alwaysRecord) {
+    debug("No active experiments, skipping recording (set data-always-record='true' to force)");
     return;
   }
 
@@ -600,14 +609,16 @@ const PulseUX = {
 (function autoInit() {
   const script = document.currentScript as HTMLScriptElement | null;
   if (script) {
-    const publicKey = script.dataset.publicKey;
+    // Support both data-pulse-key (preferred) and data-public-key (legacy)
+    const publicKey = script.dataset.pulseKey || script.dataset.publicKey;
     const apiUrl = script.dataset.apiUrl;
     const debug = script.dataset.debug === "true";
+    const alwaysRecord = script.dataset.alwaysRecord === "true";
 
     if (publicKey) {
       // Initialize after current script execution
       setTimeout(() => {
-        PulseUX.init({ publicKey, apiUrl, debug });
+        PulseUX.init({ publicKey, apiUrl, debug, alwaysRecord });
       }, 0);
     }
   }

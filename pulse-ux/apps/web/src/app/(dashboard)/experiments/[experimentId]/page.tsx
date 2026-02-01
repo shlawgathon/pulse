@@ -147,8 +147,8 @@ export default function ExperimentDetailPage() {
             <StatusBadge status={experiment.status} />
           </div>
           <p className="mt-1 text-sm text-muted-foreground">
-            {experiment.description && !experiment.description.toLowerCase().includes("failed") 
-              ? experiment.description 
+            {experiment.description && !experiment.description.toLowerCase().includes("failed")
+              ? experiment.description
               : null}
           </p>
         </div>
@@ -169,7 +169,10 @@ export default function ExperimentDetailPage() {
               {regenerateVariants.isPending ? "Regenerating..." : "Regenerate Variants"}
             </Button>
           )}
-          {(experiment.status === "pending" || experiment.status === "active" || experiment.status === "paused" || experiment.status === "completed") && (
+          {(experiment.status === "pending" ||
+            experiment.status === "active" ||
+            experiment.status === "paused" ||
+            experiment.status === "completed") && (
             <Button variant="secondary" asChild>
               <Link href={`/experiments/${experimentId}/compare`}>Compare Variants</Link>
             </Button>

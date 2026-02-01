@@ -62,15 +62,11 @@ class SiteService:
         app_url = settings.APP_URL.rstrip("/")
         # API_URL is the backend URL (where API endpoints are)
         api_url = settings.API_URL.rstrip("/")
-        
-        return (
-            f'<script src="{app_url}/actuator.js" '
-            f'data-pulse-key="{public_key}" '
-            f'data-api-url="{api_url}" '
-            f'data-debug="true" '
-            f'data-always-record="true" '
-            f'defer></script>'
-        )
+
+        # Include data-api-url if API is on a different host than the app
+        if api_url != app_url:
+            return f'<script src="{app_url}/actuator.js" data-pulse-key="{public_key}" data-api-url="{api_url}" defer></script>'
+        return f'<script src="{app_url}/actuator.js" data-pulse-key="{public_key}" defer></script>'
 
     async def create_site(
         self,
