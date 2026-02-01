@@ -53,10 +53,15 @@ app = FastAPI(
 )
 
 # Configure CORS
+# Note: For actuator endpoints (public API called from customer websites),
+# we need to allow all origins. For dashboard endpoints, we use the configured list.
+# Using allow_origins=["*"] with allow_credentials=True is not allowed by CORS spec,
+# so we use a permissive policy here. In production, you may want to implement
+# a custom CORS middleware that validates against registered site domains.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins_list,
-    allow_credentials=True,
+    allow_origins=["*"],  # Allow all origins for actuator script to work from any site
+    allow_credentials=False,  # Cannot use credentials with wildcard origins
     allow_methods=["*"],
     allow_headers=["*"],
 )

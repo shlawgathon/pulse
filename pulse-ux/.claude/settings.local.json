@@ -29,7 +29,9 @@
       "Bash(dir /s /b \"C:\\\\Users\\\\aritr\\\\Desktop\\\\GitHub Projects\\\\pulse\\\\pulse-ux\\\\README.md\")",
       "Bash(dir /s /b \"C:\\\\Users\\\\aritr\\\\Desktop\\\\GitHub Projects\\\\pulse\\\\pulse-ux\\\\*.md\")",
       "Bash(ls:*)",
-      "Bash(cd:*)"
+      "Bash(cd:*)",
+      "Bash(pushd:*)",
+      "Bash(popd:*)"
     ]
   }
 }
