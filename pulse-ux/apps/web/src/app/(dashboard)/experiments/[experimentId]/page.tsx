@@ -147,8 +147,8 @@ export default function ExperimentDetailPage() {
             <StatusBadge status={experiment.status} />
           </div>
           <p className="mt-1 text-sm text-muted-foreground">
-            {experiment.description && !experiment.description.toLowerCase().includes("failed") 
-              ? experiment.description 
+            {experiment.description && !experiment.description.toLowerCase().includes("failed")
+              ? experiment.description
               : null}
           </p>
         </div>
